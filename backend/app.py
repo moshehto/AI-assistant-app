@@ -3,8 +3,18 @@ from whisper_transcriber import transcribe_audio
 from summarizer import generate_summary
 import tempfile
 import os
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# 👇 Allow access from frontend during dev
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # You can also use ["*"] for dev
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/transcribe-and-summarize")
 async def transcribe_and_summarize(

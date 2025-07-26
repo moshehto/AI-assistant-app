@@ -1,0 +1,27 @@
+/* src/App.css */
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background-color: #f9f9f9;
+}
+
+#titlebar {
+  -webkit-app-region: drag;
+  height: 30px;
+  background-color: #1f1f1f;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#content {
+  -webkit-app-region: no-drag;
+  padding: 20px;
+}
+
+button {
+  margin-top: 10px;
+}

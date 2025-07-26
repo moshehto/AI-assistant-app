@@ -1,0 +1,39 @@
+.floating-bar {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 20px;
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(12px);
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    z-index: 9999;
+    -webkit-app-region: drag;
+  }
+  
+  .bar-btn {
+    font-size: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    -webkit-app-region: no-drag;
+  }
+  
+  .bar-btn:hover {
+    transform: scale(1.2);
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+  
+  .close-btn {
+    padding: 6px 10px;
+    font-weight: bold;
+  }
+  
