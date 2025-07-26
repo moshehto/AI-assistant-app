@@ -1,0 +1,28 @@
+# Python
+*.pyc
+__pycache__/
+.env
+temp_audio/
+
+# Node / React / Electron
+node_modules/
+dist/
+build/
+.env.local
+.DS_Store
+
+# Vite
+.vite/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# VSCode
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
