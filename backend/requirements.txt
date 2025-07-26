@@ -1,6 +1,6 @@
 fastapi
 uvicorn
 openai
-whisper
+git+https://github.com/openai/whisper.git
 python-dotenv
 ffmpeg-python
