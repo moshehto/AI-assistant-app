@@ -1,12 +1,12 @@
 .floating-bar {
     position: fixed;
-    top: 20px;
     left: 50%;
+    top: top;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
+    padding: 10px 28px;
     gap: 14px;
-    padding: 10px 20px;
     background: rgba(30, 30, 30, 0.85);
     backdrop-filter: blur(12px);
     border-radius: 18px;

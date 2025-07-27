@@ -1,18 +1,12 @@
-/* src/App.css */
-body {
-  margin: 0;
-  font-family: sans-serif;
-  background-color: #f9f9f9;
-}
+
 
 #titlebar {
   -webkit-app-region: drag;
-  height: 30px;
   background-color: #1f1f1f;
   color: white;
   display: flex;
   align-items: center;
-  padding-left: 10px;
+  padding-left: 20px;
   font-size: 14px;
   font-weight: bold;
 }
@@ -24,4 +18,13 @@ body {
 
 button {
   margin-top: 10px;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
 }
