@@ -1,36 +1,21 @@
-import React, { useState, useEffect } from 'react'
-import '../styling/floatingbar.css'
+import React from 'react';
+import '../styling/floatingbar.css';
 
-export default function FloatingBar({ onShowForm }) {
-  const [appWindow, setAppWindow] = useState(null)
-
-  useEffect(() => {
-    if (window.__TAURI__) {
-      import('@tauri-apps/api/window').then((mod) => {
-        setAppWindow(mod.getCurrent())
-      })
-    }
-  }, [])
-
-  const handleClick = () => {
-    console.log('📄 Get Form clicked')
-    if (onShowForm) {
-      onShowForm()
-    }
+export default function FloatingBar() {
+  // 👇 This function sends an IPC message to the Electron backend
+  function openHelloWindow() {
+    console.log('🧠 click fired');
+    window.electronAPI?.openHelloWindow?.(); // defined in preload.js
   }
 
   return (
-    <div className="floating-bar" data-tauri-drag-region>
+    <div className="floating-bar">
       <button className="bar-btn" title="Start">🎙️</button>
       <button className="bar-btn" title="Stop">⏹️</button>
-      <button className="bar-btn" title="Get Form" onClick={handleClick}>📄</button>
-      <button className="bar-btn" title="Summary">🧠</button>
-      <div className="drag-fill" data-tauri-drag-region />
-      <button
-        className="bar-btn close-btn"
-        onClick={() => appWindow?.minimize()}
-        title="Minimize"
-      >─</button>
+      <button className="bar-btn" title="Get Form">📄</button>
+      <button className="bar-btn" title="Summary" onClick={openHelloWindow}>🧠</button>
+      <div className="drag-fill" />
+      <button className="bar-btn close-btn" title="Minimize" onClick={() => window.electronAPI?.minimizeWindow?.()}>─</button>
     </div>
-  )
+  );
 }

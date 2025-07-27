@@ -1,0 +1,29 @@
+{
+  "name": "ai-assistant-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"npm --prefix frontend run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "npm --prefix frontend run build && electron-builder",
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moshehto/AI-assistant-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/moshehto/AI-assistant-app/issues"
+  },
+  "homepage": "https://github.com/moshehto/AI-assistant-app#readme",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.0.0",
+    "wait-on": "^7.2.0"
+  }
+}
