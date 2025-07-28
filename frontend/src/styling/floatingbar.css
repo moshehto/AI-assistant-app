@@ -1,7 +1,6 @@
 .floating-bar {
     position: fixed;
     left: 50%;
-    top: top;
     transform: translateX(-50%);
     display: flex;
     align-items: center;

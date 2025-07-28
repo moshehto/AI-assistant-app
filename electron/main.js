@@ -16,7 +16,7 @@ function createMainWindow() {
       }
     });
   
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL('http://localhost:5173/index.html');
   }
   
 
@@ -24,10 +24,12 @@ function createHelloWindow() {
   const helloWindow = new BrowserWindow({
     width: 400,
     height: 300,
-    title: 'Hello World'
+    resizable: true,
+    alwaysOnTop: true,
+    title: 'Chatbot'
   });
 
-  helloWindow.loadURL('data:text/html,<h1>Hello World</h1>');
+  helloWindow.loadURL('http://localhost:5173/chatbot.html');
 }
 
 app.whenReady().then(createMainWindow);
