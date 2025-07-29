@@ -1,0 +1,120 @@
+.chatbot-container {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  
+  .chatbot-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #2C2A24;
+    color: white;
+    padding: 15px 20px;
+  }
+  
+  .chatbot-avatar {
+    width: 40px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  
+  .chatbot-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+  
+  .chatbot-subtitle {
+    font-size: 0.85rem;
+    opacity: 0.8;
+  }
+  
+  .chatbot-icon {
+    font-size: 1.5rem;
+  }
+  
+  .chatbot-messages {
+    flex: 1;
+    padding: 15px;
+    background-color: #f7f7f7;
+    overflow-y: auto;
+    max-height: 400px;
+    scroll-behavior: smooth;
+  }
+  
+  .message-row {
+    display: flex;
+    margin-bottom: 10px;
+  }
+  
+  .message-row.user {
+    justify-content: flex-end;
+  }
+  
+  .message-row.bot {
+    justify-content: flex-start;
+  }
+  
+  .message-bubble {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 18px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  
+  .message-row.user .message-bubble {
+    background-color: #2C2A24;
+    color: white;
+    border-bottom-right-radius: 2px;
+  }
+  
+  .message-row.bot .message-bubble {
+    background-color: #e0e0e0;
+    color: #333;
+    border-bottom-left-radius: 2px;
+  }
+  
+  .typing {
+    font-style: italic;
+    opacity: 0.7;
+  }
+  
+  .chatbot-input-area {
+    display: flex;
+    border-top: 1px solid #ddd;
+    padding: 10px;
+    background-color: white;
+  }
+  
+  .chatbot-input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    border-radius: 20px 0 0 20px;
+    font-size: 0.95rem;
+    outline: none;
+  }
+  
+  .chatbot-send {
+    padding: 10px 20px;
+    border: none;
+    background-color: #2C2A24;
+    color: white;
+    border-radius: 0 20px 20px 0;
+    cursor: pointer;
+
+  }
+  
+  .chatbot-send:hover {
+    background-color: #2C2A24;
+  }
+  
