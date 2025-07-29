@@ -20,7 +20,7 @@ export default function UploadFile({ currentTask = "default" }) {
         });
 
         const data = await res.json();
-        alert(data.message); // replace with toast/snackbar if you want
+        alert(data.message);
       } catch (err) {
         alert('❌ Upload failed');
         console.error(err);

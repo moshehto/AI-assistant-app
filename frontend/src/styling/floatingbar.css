@@ -13,6 +13,18 @@
     z-index: 9999;
     -webkit-app-region: drag;
   }
+
+  .task-dropdown {
+    margin-right: 8px;
+    padding: 4px 6px;
+    font-size: 14px;
+    border-radius: 6px;
+    background-color: #f8f8f8;
+    border: 1px solid #ccc;
+    -webkit-app-region: no-drag;
+
+  }
+  
   
   .bar-btn {
     font-size: 20px;

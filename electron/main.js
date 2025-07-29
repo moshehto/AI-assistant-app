@@ -4,38 +4,62 @@ const path = require('path');
 let mainWindow;
 
 function createMainWindow() {
-    mainWindow = new BrowserWindow({
-      width: 350,
-      height: 70,
-      frame: false,
-      transparent: true,
-      resizable: false,
-      alwaysOnTop: true,
-      webPreferences: {
-        preload: path.join(__dirname, 'preload.js')
-      }
-    });
-  
-    mainWindow.loadURL('http://localhost:5173/index.html');
-  }
-  
+  mainWindow = new BrowserWindow({
+    width: 500,
+    height: 70,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    alwaysOnTop: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js')
+    }
+  });
 
-function createHelloWindow() {
-  const helloWindow = new BrowserWindow({
+  mainWindow.loadURL('http://localhost:5173/index.html');
+}
+
+function createChatbotWindow() {
+  const chatbotWindow = new BrowserWindow({
     width: 400,
     height: 300,
-    resizable: true,
     alwaysOnTop: true,
     title: 'Chatbot'
   });
-
-  helloWindow.loadURL('http://localhost:5173/chatbot.html');
+  chatbotWindow.loadURL('http://localhost:5173/chatbot.html');
 }
 
-app.whenReady().then(createMainWindow);
+function createTaskManagerWindow() {
+  const taskWindow = new BrowserWindow({
+    width: 400,
+    height: 300,
+    alwaysOnTop: true,
+    title: 'Task Manager',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js') // 👈 Required for task window to send IPC
+    }
+  });
+  taskWindow.loadURL('http://localhost:5173/taskmanager.html');
+}
 
-ipcMain.on('open-hello-window', createHelloWindow);
+// ✅ IPC handlers
+ipcMain.on('new-task', (event, taskName) => {
+  if (mainWindow?.webContents) {
+    mainWindow.webContents.send('new-task', taskName);
+  }
+});
 
+ipcMain.on('delete-task', (event, taskValue) => {
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('delete-task', taskValue);
+    }
+  });
+  
+
+ipcMain.on('open-chatbot-window', createChatbotWindow);
+ipcMain.on('task-manager-window', createTaskManagerWindow);
 ipcMain.on('minimize-window', () => {
   mainWindow?.minimize();
 });
+
+app.whenReady().then(createMainWindow);

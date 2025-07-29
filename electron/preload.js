@@ -1,10 +1,22 @@
-// If you want to expose safe APIs to renderer later
-window.api = {
-    sayHi: () => console.log('👋 Hi from Electron preload!'),
-  };
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-    openHelloWindow: () => ipcRenderer.send('open-hello-window'),
-    minimizeWindow: () => ipcRenderer.send('minimize-window')
- });
+  openChatbotWindow: () => ipcRenderer.send('open-chatbot-window'),
+  openTaskManagerWindow: () => ipcRenderer.send('task-manager-window'),
+  minimizeWindow: () => ipcRenderer.send('minimize-window'),
+
+  // 📨 Send new task to main process
+  sendNewTask: (taskName) => ipcRenderer.send('new-task', taskName),
+
+  // 📥 Receive new task in FloatingBar
+  onNewTask: (callback) => ipcRenderer.on('new-task', callback),
+  removeNewTaskListener: (callback) => ipcRenderer.removeListener('new-task', callback),
+
+  deleteTask: (taskValue) => ipcRenderer.send('delete-task', taskValue),
+  onDeleteTask: (callback) => ipcRenderer.on('delete-task', callback),
+  removeDeleteTaskListener: (callback) => ipcRenderer.removeListener('delete-task', callback),
+
+
+
+
+});

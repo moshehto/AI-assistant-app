@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, 'index.html'),
         chatbot: path.resolve(__dirname, 'chatbot.html'),
+        taskmanager: path.resolve(__dirname, 'taskmanager.html'),
       }
     }
   }
