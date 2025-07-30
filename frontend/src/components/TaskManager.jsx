@@ -7,14 +7,25 @@ export default function TaskManager() {
 
   useEffect(() => {
     const fetchTasks = async () => {
-      const tasks = await window.electronAPI?.getTaskList?.();
-      setLocalTasks(tasks.map(value => ({
-        label: value === 'default' ? '🗂️ Default Task' : `🆕 ${value}`,
-        value
-      })));
+      const rawTasks = await window.electronAPI?.getTaskList?.();
+  
+      const mapped = rawTasks.map(value => {
+        let label;
+        if (value === 'default') {
+          label = '🗂️ Default Task';
+        } else {
+          const name = value.replace(/_/g, ' ');
+          label = `🆕 ${name}`;
+        }
+        return { label, value };
+      });
+  
+      setLocalTasks(mapped);
     };
+  
     fetchTasks();
   }, []);
+  
 
   const handleAdd = () => {
     const trimmed = newTaskName.trim();

@@ -10,11 +10,32 @@ export default function FloatingBar() {
 
   const [selectedTask, setSelectedTask] = useState('default');
 
+  // ✅ Load tasks from disk on app start
+  useEffect(() => {
+    const loadTasks = async () => {
+      const rawTasks = await window.electronAPI?.getTaskList?.();
+      const mapped = rawTasks.map(value => {
+        const label = value === 'default'
+          ? '🗂️ Default Task'
+          : `🆕 ${value.replace(/_/g, ' ')}`;
+        return { label, value };
+      });
+
+      // Add Manage Tasks option at end
+      setTasks([...mapped, { label: '⚙️ Manage Tasks', value: 'manage_tasks' }]);
+    };
+
+    loadTasks();
+  }, []);
+
   // ✅ Handle adding tasks from TaskManager
   useEffect(() => {
     const handleNewTask = (_, taskName) => {
       const value = taskName.toLowerCase().replace(/\s+/g, '_');
-      const newTask = { label: `🆕 ${taskName}`, value };
+      const newTask = {
+        label: `🆕 ${taskName}`,
+        value
+      };
 
       setTasks(prev => {
         const exists = prev.some(task => task.value === value);
@@ -34,7 +55,7 @@ export default function FloatingBar() {
   // ✅ Handle deleting tasks from TaskManager
   useEffect(() => {
     const handleDeleteTask = (_, valueToDelete) => {
-      if (valueToDelete === 'default') return; // protect default task
+      if (valueToDelete === 'default') return;
 
       setTasks(prev => {
         const filtered = prev.filter(t => t.value !== valueToDelete && t.value !== 'manage_tasks');
