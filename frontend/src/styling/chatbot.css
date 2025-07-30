@@ -1,58 +1,63 @@
 .chatbot-container {
     width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
-    background-color: #fff;
-    border-radius: 20px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
+    height: 100vh;
+    margin: 0;
+    background: rgba(30, 30, 30, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: white;
     display: flex;
     flex-direction: column;
     font-family: 'Segoe UI', sans-serif;
+    border-radius: 12px;
+    overflow: hidden;
+    /* ❌ Removed app-region: drag — do not apply here */
   }
   
   .chatbot-header {
+    -webkit-app-region: drag; /* ✅ Makes just the header draggable */
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    background: #2C2A24;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .chatbot-title {
     color: white;
-    padding: 15px 20px;
+    font-size: 1rem;
+    font-weight: 500;
+    /* ❌ REMOVE: no need for drag here, it's already inherited from parent */
   }
   
-  .chatbot-avatar {
-    width: 40px;
-    height: 50px;
-    border-radius: 50%;
-    margin-right: 10px;
+  .chatbot-close {
+    -webkit-app-region: no-drag; /* ✅ Prevent drag interference */
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 8px;
   }
   
-  .chatbot-name {
-    font-weight: bold;
-    font-size: 1.1rem;
-  }
-  
-  .chatbot-subtitle {
-    font-size: 0.85rem;
-    opacity: 0.8;
-  }
-  
-  .chatbot-icon {
-    font-size: 1.5rem;
+  .chatbot-close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
   }
   
   .chatbot-messages {
     flex: 1;
     padding: 15px;
-    background-color: #f7f7f7;
     overflow-y: auto;
-    max-height: 400px;
     scroll-behavior: smooth;
+    -webkit-app-region: no-drag; /* ✅ Ensure interaction is allowed */
   }
   
   .message-row {
     display: flex;
     margin-bottom: 10px;
+    width: 100%;
   }
   
   .message-row.user {
@@ -64,22 +69,28 @@
   }
   
   .message-bubble {
-    max-width: 70%;
+    max-width: 80%;
     padding: 10px 15px;
     border-radius: 18px;
     font-size: 0.95rem;
     line-height: 1.4;
+    word-wrap: break-word;
+    word-break: break-word;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
   
   .message-row.user .message-bubble {
-    background-color: #2C2A24;
+    background-color: rgba(255, 255, 255, 0.2);
     color: white;
     border-bottom-right-radius: 2px;
   }
   
   .message-row.bot .message-bubble {
-    background-color: #e0e0e0;
-    color: #333;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: white;
     border-bottom-left-radius: 2px;
   }
   
@@ -90,31 +101,107 @@
   
   .chatbot-input-area {
     display: flex;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding: 10px;
-    background-color: white;
+    background: rgba(30, 30, 30, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-app-region: no-drag; /* ✅ This whole section must allow interaction */
   }
   
   .chatbot-input {
     flex: 1;
     padding: 10px 15px;
-    border: 1px solid #ccc;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: transparent;
+    color: white;
     border-radius: 20px 0 0 20px;
     font-size: 0.95rem;
     outline: none;
+    -webkit-app-region: no-drag; /* ✅ User must be able to type */
   }
   
   .chatbot-send {
     padding: 10px 20px;
     border: none;
-    background-color: #2C2A24;
+    background-color: rgba(255, 255, 255, 0.2);
     color: white;
     border-radius: 0 20px 20px 0;
     cursor: pointer;
-
+    -webkit-app-region: no-drag; /* ✅ Allow clicking */
   }
   
   .chatbot-send:hover {
-    background-color: #2C2A24;
+    background-color: rgba(255, 255, 255, 0.4);
   }
+
+  /* NEW: Light theme overrides */
+.chatbot-container.light {
+    background: rgba(255, 255, 255, 0.7);
+    color: #222;
+  }
+  
+  .chatbot-container.light .chatbot-input-area {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  
+  .chatbot-container.light .message-bubble {
+    background: rgba(240, 240, 240, 0.9);
+    color: #222;
+  }
+  
+  .chatbot-container.light .chatbot-input {
+    color: #222;
+    border: 1px solid #ccc;
+  }
+  
+  /* Shared styles */
+  .chatbot-toggle-mode {
+    -webkit-app-region: no-drag;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-right: 8px;
+  }
+  
+  .chatbot-header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+
+  .chatbot-minimize {
+    -webkit-app-region: no-drag;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+  
+  .chatbot-minimize:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .chatbot-container.light .chatbot-minimize {
+    color: #222;
+  }
+  
+  .chatbot-container.light .chatbot-minimize:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .chatbot-container::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border: 8px solid transparent; /* clickable area */
+    box-sizing: border-box;
+    pointer-events: none; /* so it doesn’t block content */
+  }
+  
   

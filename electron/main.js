@@ -3,7 +3,6 @@ const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
-
 let taskList = ['default'];
 
 const TASKS_FILE = path.join(__dirname, 'tasks.json');
@@ -45,15 +44,31 @@ function createMainWindow() {
   mainWindow.loadURL('http://localhost:5173/index.html');
 }
 
-// 🧠 Chatbot window
-function createChatbotWindow() {
+// 🧠 Chatbot window with task awareness
+function createChatbotWindowWithTask(task) {
   const chatbotWindow = new BrowserWindow({
     width: 400,
     height: 300,
+    minWidth: 400,
+    minHeight: 300,
+    frame: false,  
+    transparent: true,
+    resizable: true,
     alwaysOnTop: true,
-    title: 'Chatbot'
+    title: 'Chatbot',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js')
+    }
   });
+
   chatbotWindow.loadURL('http://localhost:5173/chatbot.html');
+
+  chatbotWindow.webContents.once('did-finish-load', () => {
+    // Respond to getInitialTask when frontend requests it
+    ipcMain.once('get-initial-task', (event) => {
+      event.reply('set-task', task);
+    });
+  });
 }
 
 // 🗂️ Task manager window
@@ -91,11 +106,17 @@ ipcMain.handle('get-task-list', () => {
   return taskList;
 });
 
-ipcMain.on('open-chatbot-window', createChatbotWindow);
-ipcMain.on('task-manager-window', createTaskManagerWindow);
-ipcMain.on('minimize-window', () => {
-  mainWindow?.minimize();
+// 🧠 Accept task value from FloatingBar and open chatbot window
+ipcMain.on('open-chatbot-window', (event, task) => {
+  createChatbotWindowWithTask(task || 'default');
 });
+
+ipcMain.on('task-manager-window', createTaskManagerWindow);
+ipcMain.on('minimize-window', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.minimize();
+  });
+  
 
 // 🏁 Initialize app
 app.whenReady().then(() => {

@@ -8,7 +8,6 @@ export default function TaskManager() {
   useEffect(() => {
     const fetchTasks = async () => {
       const rawTasks = await window.electronAPI?.getTaskList?.();
-  
       const mapped = rawTasks.map(value => {
         let label;
         if (value === 'default') {
@@ -19,13 +18,10 @@ export default function TaskManager() {
         }
         return { label, value };
       });
-  
       setLocalTasks(mapped);
     };
-  
     fetchTasks();
   }, []);
-  
 
   const handleAdd = () => {
     const trimmed = newTaskName.trim();
@@ -42,19 +38,14 @@ export default function TaskManager() {
   };
 
   const handleDelete = async (value) => {
-    if (value === 'default') return;
-  
-    // Frontend update
+    if (value === 'default') return; // Prevent deletion here, handled separately
+
     setLocalTasks(prev => prev.filter(t => t.value !== value));
-  
-    // Notify main window
     window.electronAPI?.deleteTask(value);
-  
-    // 🧹 Notify backend to delete folder
+
     try {
       const formData = new FormData();
       formData.append("task_name", value);
-  
       await fetch("http://localhost:8000/delete-task-folder", {
         method: "POST",
         body: formData
@@ -63,7 +54,19 @@ export default function TaskManager() {
       console.error("❌ Failed to delete folder:", err);
     }
   };
-  
+
+  const handleClearDefaultTask = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("task_name", "default");
+      await fetch("http://localhost:8000/delete-task-folder", {
+        method: "POST",
+        body: formData
+      });
+    } catch (err) {
+      console.error("❌ Failed to clear default folder:", err);
+    }
+  };
 
   return (
     <div className="task-manager-overlay">
@@ -73,7 +76,9 @@ export default function TaskManager() {
           {localTasks.map((task, i) => (
             <li key={i} className="task-item">
               {task.label}
-              {task.value !== 'default' && (
+              {task.value === 'default' ? (
+                <button onClick={handleClearDefaultTask}>🗑️</button>
+              ) : (
                 <button onClick={() => handleDelete(task.value)}>🗑️</button>
               )}
             </li>

@@ -1,14 +1,12 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  openChatbotWindow: () => ipcRenderer.send('open-chatbot-window'),
+  openChatbotWindow: (task) => ipcRenderer.send('open-chatbot-window', task),
   openTaskManagerWindow: () => ipcRenderer.send('task-manager-window'),
   minimizeWindow: () => ipcRenderer.send('minimize-window'),
 
-  // 📨 Send new task to main process
   sendNewTask: (taskName) => ipcRenderer.send('new-task', taskName),
 
-  // 📥 Receive new task in FloatingBar
   onNewTask: (callback) => ipcRenderer.on('new-task', callback),
   removeNewTaskListener: (callback) => ipcRenderer.removeListener('new-task', callback),
 
@@ -18,8 +16,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   getTaskList: () => ipcRenderer.invoke('get-task-list'),
 
-
-
-
-
+  getInitialTask: () => {
+    ipcRenderer.send('get-initial-task');
+    return new Promise(resolve => {
+      ipcRenderer.once('set-task', (_, task) => resolve(task));
+    });
+  }
 });
+
