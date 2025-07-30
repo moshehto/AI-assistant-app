@@ -16,6 +16,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onDeleteTask: (callback) => ipcRenderer.on('delete-task', callback),
   removeDeleteTaskListener: (callback) => ipcRenderer.removeListener('delete-task', callback),
 
+  getTaskList: () => ipcRenderer.invoke('get-task-list'),
+
+
 
 
 

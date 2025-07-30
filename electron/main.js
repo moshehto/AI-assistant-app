@@ -2,6 +2,8 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 
 let mainWindow;
+let taskList = ['default'];
+
 
 function createMainWindow() {
   mainWindow = new BrowserWindow({
@@ -44,16 +46,21 @@ function createTaskManagerWindow() {
 
 // ✅ IPC handlers
 ipcMain.on('new-task', (event, taskName) => {
-  if (mainWindow?.webContents) {
+    const safe = taskName.trim().toLowerCase().replace(/\s+/g, '_');
+    if (!taskList.includes(safe)) taskList.push(safe);
     mainWindow.webContents.send('new-task', taskName);
-  }
-});
-
-ipcMain.on('delete-task', (event, taskValue) => {
-    if (mainWindow && mainWindow.webContents) {
-      mainWindow.webContents.send('delete-task', taskValue);
-    }
   });
+  
+  ipcMain.on('delete-task', (event, taskValue) => {
+    taskList = taskList.filter(t => t !== taskValue);
+    mainWindow.webContents.send('delete-task', taskValue);
+  });
+
+  ipcMain.handle('get-task-list', () => {
+    return taskList;
+  });
+  
+  
   
 
 ipcMain.on('open-chatbot-window', createChatbotWindow);
