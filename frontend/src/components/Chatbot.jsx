@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import '../styling/chatbot.css';
 
 export default function Chatbot() {
@@ -23,6 +24,43 @@ export default function Chatbot() {
       console.error("❌ Failed to load chat history:", err);
     }
   };
+
+  const handleFileUpload = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+  
+    const formData = new FormData();
+    formData.append('task_id', currentTask);
+  
+    for (const file of files) {
+      formData.append('files', file);
+    }
+  
+    try {
+      const res = await fetch('http://localhost:8000/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+  
+      setMessages(prev => [
+        ...prev,
+        {
+          sender: 'bot',
+          text: `✅ Uploaded ${data.filenames.length} file(s) to task "${data.task}". You can now ask about them.`
+        }
+      ]);
+    } catch (err) {
+      setMessages(prev => [
+        ...prev,
+        { sender: 'bot', text: '❌ Upload failed. Please try again.' }
+      ]);
+      console.error(err);
+    }
+    e.target.value = null;
+    };
+ 
+  
 
   // Load initial task and dark mode from localStorage
   useEffect(() => {
@@ -100,10 +138,15 @@ export default function Chatbot() {
       {/* Messages */}
       <div className="chatbot-messages">
         {messages.map((msg, i) => (
-          <div key={i} className={`message-row ${msg.sender}`}>
-            <div className="message-bubble">{msg.text}</div>
-          </div>
-        ))}
+            (msg.sender === 'user' || msg.sender === 'bot') && (
+                <div key={i} className={`message-row ${msg.sender}`}>
+                <div className="message-bubble">
+                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                </div>
+                </div>
+            )
+            ))}
+
         {loading && (
           <div className="message-row bot">
             <div className="message-bubble typing">Chatbot is thinking...</div>
@@ -114,16 +157,28 @@ export default function Chatbot() {
 
       {/* Input area */}
       <div className="chatbot-input-area">
+      <label className="chatbot-upload-icon" title="Upload file">
+            📎
+            <input
+                type="file"
+                onChange={handleFileUpload}
+                multiple
+                className="chatbot-file-hidden"
+            />
+            </label>
+
+
         <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          className="chatbot-input"
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message..."
+            className="chatbot-input"
         />
-        <button onClick={sendMessage} className="chatbot-send">Send</button>
-      </div>
+  <button onClick={sendMessage} className="chatbot-send">Send</button>
+</div>
+
     </div>
   );
 }

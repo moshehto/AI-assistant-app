@@ -1,5 +1,4 @@
 [
   "default",
-  "ssa_brd",
-  "cold"
+  "testing"
 ]

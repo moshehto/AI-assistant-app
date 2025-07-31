@@ -7,6 +7,10 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import tempfile, shutil, os, json
 from typing import List
+from doc_analyzer import analyze_document
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 
 app = FastAPI()
 
@@ -60,6 +64,8 @@ async def get_chat_history(task: str):
 
     return {"history": data}
 
+from file_processor import index_uploaded_files  # 🔁 Import the function
+
 @app.post("/upload")
 async def upload_file(
     task_id: str = Form(...),
@@ -76,11 +82,18 @@ async def upload_file(
             f.write(await file.read())
         saved_files.append(file.filename)
 
+    # ✅ NEW: Run embedding indexing after upload
+    try:
+        index_uploaded_files(safe_task)
+    except Exception as e:
+        print(f"⚠️ Error indexing uploaded files: {e}")
+
     return {
         "status": "success",
         "task": safe_task,
         "filenames": saved_files
     }
+
 
 @app.post("/delete-task-folder")
 async def delete_task(task_name: str = Form(...)):
@@ -92,3 +105,19 @@ async def delete_task(task_name: str = Form(...)):
         return {"status": "deleted", "task": safe_task}
     else:
         raise HTTPException(status_code=404, detail="Folder not found")
+
+
+@app.get("/analyze-documents")
+async def analyze_documents(task: str):
+    safe_task = task.strip().lower().replace(" ", "_")
+    task_folder = os.path.join(UPLOAD_DIR, safe_task)
+    summaries = {}
+
+    for file in os.listdir(task_folder):
+        path = os.path.join(task_folder, file)
+        try:
+            summaries[file] = analyze_document(path)
+        except Exception as e:
+            summaries[file] = f"⚠️ Error: {str(e)}"
+    
+    return summaries

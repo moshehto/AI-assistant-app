@@ -204,4 +204,42 @@
     pointer-events: none; /* so it doesn’t block content */
   }
   
+  .chatbot-file-input {
+    color: white;
+    font-size: 0.9rem;
+    margin-right: 10px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    max-width: 150px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  
+  .chatbot-container.light .chatbot-file-input {
+    color: #222;
+  }
+
+  .chatbot-upload-icon {
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background-color: transparent;
+    -webkit-app-region: no-drag;
+  }
+  
+  .chatbot-upload-icon:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .chatbot-container.light .chatbot-upload-icon:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .chatbot-file-hidden {
+    display: none;
+  }
+  
+  
   
