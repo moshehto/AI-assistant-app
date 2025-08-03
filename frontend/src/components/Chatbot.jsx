@@ -110,39 +110,79 @@ export default function Chatbot() {
     }
   };
 
-  // ✅ FIXED: Upload handler with proper state management
+  // ✅ FIXED: Upload handler with proper state management and correct endpoint
   const handleFileUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const formData = new FormData();
-    formData.append('task_id', currentTask);
-    for (const file of files) formData.append('files', file);
+    // Show uploading message immediately
+    const uploadingMessage = {
+      role: 'assistant',
+      content: `📤 Uploading ${files.length} file(s)...`,
+      id: `uploading-${Date.now()}`
+    };
+    setMessages(prev => [...prev, uploadingMessage]);
 
-    try {
-      const res = await fetch(`${API_BASE}/upload`, {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      
-      const uploadMessage = {
+    const uploadedFiles = [];
+    const failedFiles = [];
+
+    // Process files one by one (your endpoint expects single file)
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('user_id', 'user123'); // Add user_id as required
+      formData.append('task_id', currentTask);
+      formData.append('file', file); // Single file as expected
+
+      try {
+        console.log(`📦 Uploading ${file.name} to backend...`);
+        
+        const res = await fetch(`${API_BASE}/upload-and-index`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const responseText = await res.text();
+        console.log(`📬 Upload response for ${file.name}:`, res.status, responseText);
+
+        if (res.ok) {
+          const data = JSON.parse(responseText);
+          uploadedFiles.push(data.filename || file.name);
+          console.log(`✅ Successfully uploaded ${file.name}`);
+        } else {
+          throw new Error(`Upload failed: ${res.status} ${responseText}`);
+        }
+
+      } catch (err) {
+        console.error(`❌ Upload error for ${file.name}:`, err);
+        failedFiles.push(file.name);
+      }
+    }
+
+    // Replace uploading message with result
+    let resultMessage;
+    if (uploadedFiles.length > 0 && failedFiles.length === 0) {
+      resultMessage = {
         role: 'assistant',
-        content: `✅ Uploaded ${data.filenames.length} file(s) to task "${data.task}". You can now ask about them.`,
-        id: `upload-${Date.now()}`
+        content: `✅ Successfully uploaded ${uploadedFiles.length} file(s) to task "${currentTask}". You can now ask questions about your documents!`,
+        id: `upload-success-${Date.now()}`
       };
-      
-      setMessages(prev => [...prev, uploadMessage]);
-
-    } catch (err) {
-      const errorMessage = {
+    } else if (uploadedFiles.length > 0 && failedFiles.length > 0) {
+      resultMessage = {
         role: 'assistant',
-        content: '❌ Upload failed. Please try again.',
+        content: `⚠️ Uploaded ${uploadedFiles.length} file(s) successfully, but ${failedFiles.length} failed: ${failedFiles.join(', ')}`,
+        id: `upload-partial-${Date.now()}`
+      };
+    } else {
+      resultMessage = {
+        role: 'assistant',
+        content: '❌ All uploads failed. Please check your connection and try again.',
         id: `upload-error-${Date.now()}`
       };
-      setMessages(prev => [...prev, errorMessage]);
-      console.error(err);
     }
+    
+    setMessages(prev => prev.map(msg => 
+      msg.id === uploadingMessage.id ? resultMessage : msg
+    ));
 
     e.target.value = null;
   };
@@ -186,6 +226,7 @@ export default function Chatbot() {
           <input
             type="file"
             onChange={handleFileUpload}
+            accept = ".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.json,.png,.jpeg,.jpg,.heic" // File types
             multiple
             className="chatbot-file-hidden"
           />

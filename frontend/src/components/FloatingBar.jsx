@@ -99,8 +99,16 @@ export default function FloatingBar() {
 
       <button className="bar-btn" title="Start">🎙️</button>
       <button className="bar-btn" title="Stop">⏹️</button>
-      <UploadFile currentTask={selectedTask} />
-      <button className="bar-btn" title="Summary" onClick={() => window.electronAPI?.openChatbotWindow?.(selectedTask)}>🧠</button>      <div className="drag-fill" />
+      
+      {/* ✅ Now matches your theme perfectly */}
+      <UploadFile 
+        currentTask={selectedTask} 
+        className="bar-btn"
+        title="Upload File"
+      />
+      
+      <button className="bar-btn" title="Summary" onClick={() => window.electronAPI?.openChatbotWindow?.(selectedTask)}>🧠</button>
+      <div className="drag-fill" />
       <button className="bar-btn close-btn" title="Minimize" onClick={() => window.electronAPI?.minimizeWindow?.()}>─</button>
     </div>
   );
