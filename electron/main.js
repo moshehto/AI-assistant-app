@@ -97,6 +97,20 @@ function createTaskManagerWindow() {
   taskWindow.loadURL('http://localhost:5173/taskmanager.html');
 }
 
+function createFileManagerWindow() {
+  const taskWindow = new BrowserWindow({
+    width: 400,
+    height: 300,
+    alwaysOnTop: true,
+    title: 'File Manager',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js')
+    }
+  });
+  taskWindow.loadURL('http://localhost:5173/filemanager.html');
+}
+
+
 // IPC handlers (mostly unchanged)
 ipcMain.on('new-task', (event, taskName) => {
   const taskValue = taskName.toLowerCase().replace(/\s+/g, '_');
@@ -122,6 +136,9 @@ ipcMain.on('open-chatbot-window', (event, task) => {
 });
 
 ipcMain.on('task-manager-window', createTaskManagerWindow);
+
+ipcMain.on('file-manager-window', createFileManagerWindow);
+
 
 ipcMain.on('minimize-window', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);

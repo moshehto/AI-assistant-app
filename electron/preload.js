@@ -3,6 +3,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   openChatbotWindow: (task) => ipcRenderer.send('open-chatbot-window', task),
   openTaskManagerWindow: () => ipcRenderer.send('task-manager-window'),
+  openFileManagerWindow: () => ipcRenderer.send('file-manager-window'),
+
   minimizeWindow: () => ipcRenderer.send('minimize-window'),
 
   sendNewTask: (taskName) => ipcRenderer.send('new-task', taskName),
