@@ -5,6 +5,8 @@ export default function TaskManager() {
   const [newTaskName, setNewTaskName] = useState('');
   const [localTasks, setLocalTasks] = useState([]);
 
+  const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
+
   useEffect(() => {
     const fetchTasks = async () => {
       const rawTasks = await window.electronAPI?.getTaskList?.();
@@ -38,7 +40,7 @@ export default function TaskManager() {
   };
 
   const handleDelete = async (value) => {
-    if (value === 'default') return; // Prevent deletion here, handled separately
+    if (value === 'default') return;
 
     setLocalTasks(prev => prev.filter(t => t.value !== value));
     window.electronAPI?.deleteTask(value);
@@ -46,7 +48,7 @@ export default function TaskManager() {
     try {
       const formData = new FormData();
       formData.append("task_name", value);
-      await fetch("http://localhost:8000/delete-task-folder", {
+      await fetch(`${API_BASE}/delete-task-folder`, {
         method: "POST",
         body: formData
       });
@@ -59,7 +61,7 @@ export default function TaskManager() {
     try {
       const formData = new FormData();
       formData.append("task_name", "default");
-      await fetch("http://localhost:8000/delete-task-folder", {
+      await fetch(`${API_BASE}/delete-task-folder`, {
         method: "POST",
         body: formData
       });
