@@ -1,7 +1,7 @@
 import React from 'react';
 
 export default function UploadFile({ 
-  currentTask = "default", 
+  currentconversation = "default", 
   userId = "user123", 
   groupId = null,
   onUploadComplete = null, // Callback to update chat messages
@@ -41,7 +41,7 @@ export default function UploadFile({
       for (const file of files) {
         const formData = new FormData();
         formData.append('user_id', userId);
-        formData.append('task_id', currentTask);
+        formData.append('conversation_id', currentconversation);
         formData.append('file', file); // Fixed: was referencing undefined 'file' variable
 
         try {
@@ -74,7 +74,7 @@ export default function UploadFile({
       if (uploadedFiles.length > 0 && failedFiles.length === 0) {
         resultMessage = {
           role: 'assistant',
-          content: `✅ Successfully uploaded ${uploadedFiles.length} file(s) to task "${currentTask}". You can now ask questions about your documents!`,
+          content: `✅ Successfully uploaded ${uploadedFiles.length} file(s) to conversation "${currentconversation}". You can now ask questions about your documents!`,
           id: `upload-success-${Date.now()}`
         };
       } else if (uploadedFiles.length > 0 && failedFiles.length > 0) {
@@ -96,7 +96,7 @@ export default function UploadFile({
       } else {
         // Fallback: show alert if no callback (for floating bar usage)
         if (uploadedFiles.length > 0) {
-          alert(`✅ Uploaded ${uploadedFiles.length} file(s) to task "${currentTask}"`);
+          alert(`✅ Uploaded ${uploadedFiles.length} file(s) to conversation "${currentconversation}"`);
         } else {
           alert('❌ Upload failed. Please try again.');
         }

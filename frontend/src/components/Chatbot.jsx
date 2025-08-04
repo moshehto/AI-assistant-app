@@ -6,16 +6,16 @@ export default function Chatbot() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [currentTask, setCurrentTask] = useState('default');
+  const [currentconversation, setCurrentconversation] = useState('default');
   const [darkMode, setDarkMode] = useState(true);
   const scrollRef = useRef(null);
 
   const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
 
   // ✅ Load chat history
-  const loadChatHistory = async (task) => {
+  const loadChatHistory = async (conversation) => {
     try {
-      const res = await fetch(`${API_BASE}/chat-history?task=${task}`);
+      const res = await fetch(`${API_BASE}/chat-history?conversation=${conversation}`);
       const data = await res.json();
       if (data?.history) {
         // Add unique IDs to loaded messages
@@ -30,13 +30,13 @@ export default function Chatbot() {
     }
   };
 
-  // ✅ Initialize task and theme
+  // ✅ Initialize conversation and theme
   useEffect(() => {
     const init = async () => {
-      const task = await window.electronAPI?.getInitialTask?.();
-      const safeTask = task || 'default';
-      setCurrentTask(safeTask);
-      loadChatHistory(safeTask);
+      const conversation = await window.electronAPI?.getInitialconversation?.();
+      const safeconversation = conversation || 'default';
+      setCurrentconversation(safeconversation);
+      loadChatHistory(safeconversation);
 
       const savedMode = localStorage.getItem('chatbot-dark-mode');
       if (savedMode !== null) setDarkMode(savedMode === 'true');
@@ -75,7 +75,7 @@ export default function Chatbot() {
       const res = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed, task: currentTask }),
+        body: JSON.stringify({ message: trimmed, conversation: currentconversation }),
       });
 
       const data = await res.json();
@@ -130,7 +130,7 @@ export default function Chatbot() {
     for (const file of files) {
       const formData = new FormData();
       formData.append('user_id', 'user123'); // Add user_id as required
-      formData.append('task_id', currentTask);
+      formData.append('conversation_id', currentconversation);
       formData.append('file', file); // Single file as expected
 
       try {
@@ -163,7 +163,7 @@ export default function Chatbot() {
     if (uploadedFiles.length > 0 && failedFiles.length === 0) {
       resultMessage = {
         role: 'assistant',
-        content: `✅ Successfully uploaded ${uploadedFiles.length} file(s) to task "${currentTask}". You can now ask questions about your documents!`,
+        content: `✅ Successfully uploaded ${uploadedFiles.length} file(s) to conversation "${currentconversation}". You can now ask questions about your documents!`,
         id: `upload-success-${Date.now()}`
       };
     } else if (uploadedFiles.length > 0 && failedFiles.length > 0) {

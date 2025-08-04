@@ -1,4 +1,4 @@
-.task-manager-overlay {
+.conversation-manager-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -11,7 +11,7 @@
     z-index: 9999;
   }
   
-  .task-manager-modal {
+  .conversation-manager-modal {
     background: white;
     padding: 20px;
     border-radius: 12px;
@@ -21,19 +21,19 @@
     box-shadow: 0 0 20px rgba(0,0,0,0.3);
   }
   
-  .task-item {
+  .conversation-item {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
   }
   
-  .task-input {
+  .conversation-input {
     margin-top: 16px;
     display: flex;
     gap: 8px;
   }
   
-  .task-input input {
+  .conversation-input input {
     flex: 1;
     padding: 6px;
   }

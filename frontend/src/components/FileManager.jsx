@@ -6,8 +6,8 @@ import '../styling/filemanager.css';
 const S3FileManager = () => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedTask, setSelectedTask] = useState('');
-  const [tasks, setTasks] = useState([]);
+  const [selectedconversation, setSelectedconversation] = useState('');
+  const [conversations, setconversations] = useState([]);
   const [deletingFiles, setDeletingFiles] = useState(new Set());
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
@@ -16,23 +16,23 @@ const S3FileManager = () => {
   const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
 
   useEffect(() => {
-    loadTasks();
+    loadconversations();
   }, []);
 
   useEffect(() => {
-    if (selectedTask) {
+    if (selectedconversation) {
       loadFiles();
     }
-  }, [selectedTask]);
+  }, [selectedconversation]);
 
-  const loadTasks = async () => {
+  const loadconversations = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/tasks`);
+      const response = await fetch(`${API_BASE}/api/conversations`);
       const data = await response.json();
-      setTasks(data.tasks || []);
+      setconversations(data.conversations || []);
     } catch (err) {
-      console.error('Error loading tasks:', err);
-      setError('Failed to load tasks');
+      console.error('Error loading conversations:', err);
+      setError('Failed to load conversations');
     }
   };
 
@@ -40,7 +40,7 @@ const S3FileManager = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${API_BASE}/api/files?task=${encodeURIComponent(selectedTask)}`);
+      const response = await fetch(`${API_BASE}/api/files?conversation=${encodeURIComponent(selectedconversation)}`);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -111,8 +111,8 @@ const S3FileManager = () => {
           <h1 className="title">File Manager</h1>
           <button
             onClick={loadFiles}
-            disabled={!selectedTask || loading}
-            className={`refresh-btn ${(!selectedTask || loading) ? 'disabled' : ''}`}
+            disabled={!selectedconversation || loading}
+            className={`refresh-btn ${(!selectedconversation || loading) ? 'disabled' : ''}`}
           >
             <RefreshCw className={`icon-sm ${loading ? 'spinning' : ''}`} />
             Refresh
@@ -120,13 +120,13 @@ const S3FileManager = () => {
         </div>
         
         <select
-          value={selectedTask}
-          onChange={(e) => setSelectedTask(e.target.value)}
-          className="task-select"
+          value={selectedconversation}
+          onChange={(e) => setSelectedconversation(e.target.value)}
+          className="conversation-select"
         >
-          <option value="">Select a task...</option>
-          {tasks.map((task) => (
-            <option key={task} value={task}>{task}</option>
+          <option value="">Select a conversation...</option>
+          {conversations.map((conversation) => (
+            <option key={conversation} value={conversation}>{conversation}</option>
           ))}
         </select>
       </div>
@@ -143,9 +143,9 @@ const S3FileManager = () => {
           </div>
         )}
 
-        {!selectedTask ? (
+        {!selectedconversation ? (
           <div className="empty-state">
-            <p>Select a task to view files</p>
+            <p>Select a conversation to view files</p>
           </div>
         ) : loading ? (
           <div className="loading-state">

@@ -3,111 +3,111 @@ import '../styling/floatingbar.css';
 import UploadFile from './UploadFile';
 
 export default function FloatingBar() {
-  const [tasks, setTasks] = useState([
-    { label: '🗂️ Default Task', value: 'default' },
-    { label: '⚙️ Manage Tasks', value: 'manage_tasks' }
+  const [conversations, setconversations] = useState([
+    { label: '🗂️ Default conversation', value: 'default' },
+    { label: '⚙️ Manage conversations', value: 'manage_conversations' }
   ]);
 
-  const [selectedTask, setSelectedTask] = useState('default');
+  const [selectedconversation, setSelectedconversation] = useState('default');
 
-  // ✅ Load tasks from disk on app start
+  // ✅ Load conversations from disk on app start
   useEffect(() => {
-    const loadTasks = async () => {
-      const rawTasks = await window.electronAPI?.getTaskList?.();
-      const mapped = rawTasks.map(value => {
+    const loadconversations = async () => {
+      const rawconversations = await window.electronAPI?.getconversationList?.();
+      const mapped = rawconversations.map(value => {
         const label = value === 'default'
-          ? '🗂️ Default Task'
+          ? '🗂️ Default conversation'
           : `🆕 ${value.replace(/_/g, ' ')}`;
         return { label, value };
       });
 
-      // Add Manage Tasks option at end
-      setTasks([...mapped, { label: '⚙️ Manage Tasks', value: 'manage_tasks' }]);
+      // Add Manage conversations option at end
+      setconversations([...mapped, { label: '⚙️ Manage conversations', value: 'manage_conversations' }]);
     };
 
-    loadTasks();
+    loadconversations();
   }, []);
 
   
 
-  // ✅ Handle adding tasks from TaskManager
+  // ✅ Handle adding conversations from conversationManager
   useEffect(() => {
-    const handleNewTask = (_, taskName) => {
-      const value = taskName.toLowerCase().replace(/\s+/g, '_');
-      const newTask = {
-        label: `🆕 ${taskName}`,
+    const handleNewconversation = (_, conversationName) => {
+      const value = conversationName.toLowerCase().replace(/\s+/g, '_');
+      const newconversation = {
+        label: `🆕 ${conversationName}`,
         value
       };
 
-      setTasks(prev => {
-        const exists = prev.some(task => task.value === value);
+      setconversations(prev => {
+        const exists = prev.some(conversation => conversation.value === value);
         if (exists) return prev;
 
-        const withoutManage = prev.filter(t => t.value !== 'manage_tasks');
-        return [...withoutManage, newTask, { label: '⚙️ Manage Tasks', value: 'manage_tasks' }];
+        const withoutManage = prev.filter(t => t.value !== 'manage_conversations');
+        return [...withoutManage, newconversation, { label: '⚙️ Manage conversations', value: 'manage_conversations' }];
       });
 
-      setSelectedTask(value);
+      setSelectedconversation(value);
     };
 
-    window.electronAPI?.onNewTask?.(handleNewTask);
-    return () => window.electronAPI?.removeNewTaskListener?.(handleNewTask);
+    window.electronAPI?.onNewconversation?.(handleNewconversation);
+    return () => window.electronAPI?.removeNewconversationListener?.(handleNewconversation);
   }, []);
 
-  // ✅ Handle deleting tasks from TaskManager
+  // ✅ Handle deleting conversations from conversationManager
   useEffect(() => {
-    const handleDeleteTask = (_, valueToDelete) => {
+    const handleDeleteconversation = (_, valueToDelete) => {
       if (valueToDelete === 'default') return;
 
-      setTasks(prev => {
-        const filtered = prev.filter(t => t.value !== valueToDelete && t.value !== 'manage_tasks');
-        return [...filtered, { label: '⚙️ Manage Tasks', value: 'manage_tasks' }];
+      setconversations(prev => {
+        const filtered = prev.filter(t => t.value !== valueToDelete && t.value !== 'manage_conversations');
+        return [...filtered, { label: '⚙️ Manage conversations', value: 'manage_conversations' }];
       });
 
-      if (selectedTask === valueToDelete) {
-        setSelectedTask('default');
+      if (selectedconversation === valueToDelete) {
+        setSelectedconversation('default');
       }
     };
 
-    window.electronAPI?.onDeleteTask?.(handleDeleteTask);
-    return () => window.electronAPI?.removeDeleteTaskListener?.(handleDeleteTask);
-  }, [selectedTask]);
+    window.electronAPI?.onDeleteconversation?.(handleDeleteconversation);
+    return () => window.electronAPI?.removeDeleteconversationListener?.(handleDeleteconversation);
+  }, [selectedconversation]);
 
-  const handleTaskChange = (e) => {
+  const handleconversationChange = (e) => {
     const selected = e.target.value;
-    if (selected === 'manage_tasks') {
-      window.electronAPI?.openTaskManagerWindow?.();
+    if (selected === 'manage_conversations') {
+      window.electronAPI?.openconversationManagerWindow?.();
     } else {
-      setSelectedTask(selected);
+      setSelectedconversation(selected);
     }
   };
 
   return (
     <div className="floating-bar">
       <select
-        className="task-dropdown"
-        value={selectedTask}
-        onChange={handleTaskChange}
-        title="Choose Task Context"
+        className="conversation-dropdown"
+        value={selectedconversation}
+        onChange={handleconversationChange}
+        title="Choose conversation Context"
       >
-        {tasks.map((task, index) => (
-          <option key={index} value={task.value}>
-            {task.label}
+        {conversations.map((conversation, index) => (
+          <option key={index} value={conversation.value}>
+            {conversation.label}
           </option>
         ))}
       </select>
 
       <button className="bar-btn" title="Start">🎙️</button>
-      <button className="bar-btn" title="List Files" onClick={() => window.electronAPI?.openFileManagerWindow?.(selectedTask)}>📁</button>
+      <button className="bar-btn" title="List Files" onClick={() => window.electronAPI?.openFileManagerWindow?.(selectedconversation)}>📁</button>
       
       {/* ✅ Now matches your theme perfectly */}
       <UploadFile 
-        currentTask={selectedTask} 
+        currentconversation={selectedconversation} 
         className="bar-btn"
         title="Upload File"
       />
       
-      <button className="bar-btn" title="Chatbot" onClick={() => window.electronAPI?.openChatbotWindow?.(selectedTask)}>🧠</button>
+      <button className="bar-btn" title="Chatbot" onClick={() => window.electronAPI?.openChatbotWindow?.(selectedconversation)}>🧠</button>
       <div className="drag-fill" />
       <button className="bar-btn close-btn" title="Minimize" onClick={() => window.electronAPI?.minimizeWindow?.()}>─</button>
     </div>

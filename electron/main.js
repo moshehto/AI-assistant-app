@@ -4,27 +4,27 @@ const fs = require('fs');
 
 let mainWindow;
 let chatbotWindow; // Track chatbot window instance
-let taskList = ['default'];
+let conversationList = ['default'];
 
-const TASKS_FILE = path.join(__dirname, 'tasks.json');
+const conversationS_FILE = path.join(__dirname, 'conversations.json');
 
-// Load and save tasks (unchanged)
-function loadTasksFromDisk() {
-  if (fs.existsSync(TASKS_FILE)) {
+// Load and save conversations (unchanged)
+function loadconversationsFromDisk() {
+  if (fs.existsSync(conversationS_FILE)) {
     try {
-      const data = fs.readFileSync(TASKS_FILE, 'utf8');
+      const data = fs.readFileSync(conversationS_FILE, 'utf8');
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed)) {
-        taskList = parsed;
+        conversationList = parsed;
       }
     } catch (err) {
-      console.error('❌ Failed to load tasks.json:', err);
+      console.error('❌ Failed to load conversations.json:', err);
     }
   }
 }
 
-function saveTasksToDisk() {
-  fs.writeFileSync(TASKS_FILE, JSON.stringify(taskList, null, 2));
+function saveconversationsToDisk() {
+  fs.writeFileSync(conversationS_FILE, JSON.stringify(conversationList, null, 2));
 }
 
 // Main floating bar (unchanged)
@@ -45,7 +45,7 @@ function createMainWindow() {
 }
 
 // Create or show chatbot window
-function createOrToggleChatbotWindow(task) {
+function createOrToggleChatbotWindow(conversation) {
   if (chatbotWindow && !chatbotWindow.isDestroyed()) {
     if (chatbotWindow.isVisible()) {
       chatbotWindow.hide();
@@ -72,8 +72,8 @@ function createOrToggleChatbotWindow(task) {
     chatbotWindow.loadURL('http://localhost:5173/chatbot.html');
 
     chatbotWindow.webContents.once('did-finish-load', () => {
-      ipcMain.once('get-initial-task', (event) => {
-        event.reply('set-task', task || 'default');
+      ipcMain.once('get-initial-conversation', (event) => {
+        event.reply('set-conversation', conversation || 'default');
       });
     });
 
@@ -83,22 +83,22 @@ function createOrToggleChatbotWindow(task) {
   }
 }
 
-// Task manager window (unchanged)
-function createTaskManagerWindow() {
-  const taskWindow = new BrowserWindow({
+// conversation manager window (unchanged)
+function createconversationManagerWindow() {
+  const conversationWindow = new BrowserWindow({
     width: 400,
     height: 300,
     alwaysOnTop: true,
-    title: 'Task Manager',
+    title: 'conversation Manager',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
     }
   });
-  taskWindow.loadURL('http://localhost:5173/taskmanager.html');
+  conversationWindow.loadURL('http://localhost:5173/conversationmanager.html');
 }
 
 function createFileManagerWindow() {
-  const taskWindow = new BrowserWindow({
+  const conversationWindow = new BrowserWindow({
     width: 400,
     height: 300,
     alwaysOnTop: true,
@@ -107,35 +107,35 @@ function createFileManagerWindow() {
       preload: path.join(__dirname, 'preload.js')
     }
   });
-  taskWindow.loadURL('http://localhost:5173/filemanager.html');
+  conversationWindow.loadURL('http://localhost:5173/filemanager.html');
 }
 
 
 // IPC handlers (mostly unchanged)
-ipcMain.on('new-task', (event, taskName) => {
-  const taskValue = taskName.toLowerCase().replace(/\s+/g, '_');
-  if (!taskList.includes(taskValue)) {
-    taskList.push(taskValue);
-    saveTasksToDisk();
+ipcMain.on('new-conversation', (event, conversationName) => {
+  const conversationValue = conversationName.toLowerCase().replace(/\s+/g, '_');
+  if (!conversationList.includes(conversationValue)) {
+    conversationList.push(conversationValue);
+    saveconversationsToDisk();
   }
-  mainWindow.webContents.send('new-task', taskName);
+  mainWindow.webContents.send('new-conversation', conversationName);
 });
 
-ipcMain.on('delete-task', (event, taskValue) => {
-  taskList = taskList.filter(t => t !== taskValue);
-  saveTasksToDisk();
-  mainWindow.webContents.send('delete-task', taskValue);
+ipcMain.on('delete-conversation', (event, conversationValue) => {
+  conversationList = conversationList.filter(t => t !== conversationValue);
+  saveconversationsToDisk();
+  mainWindow.webContents.send('delete-conversation', conversationValue);
 });
 
-ipcMain.handle('get-task-list', () => {
-  return taskList;
+ipcMain.handle('get-conversation-list', () => {
+  return conversationList;
 });
 
-ipcMain.on('open-chatbot-window', (event, task) => {
-  createOrToggleChatbotWindow(task || 'default');
+ipcMain.on('open-chatbot-window', (event, conversation) => {
+  createOrToggleChatbotWindow(conversation || 'default');
 });
 
-ipcMain.on('task-manager-window', createTaskManagerWindow);
+ipcMain.on('conversation-manager-window', createconversationManagerWindow);
 
 ipcMain.on('file-manager-window', createFileManagerWindow);
 
@@ -147,7 +147,7 @@ ipcMain.on('minimize-window', (event) => {
 
 // Register global shortcut on ready
 app.whenReady().then(() => {
-  loadTasksFromDisk();
+  loadconversationsFromDisk();
   createMainWindow();
 
   globalShortcut.register('Command+Shift+H', () => {

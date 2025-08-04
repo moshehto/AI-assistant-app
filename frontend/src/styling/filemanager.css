@@ -52,7 +52,7 @@
     cursor: not-allowed;
   }
   
-  .task-select {
+  .conversation-select {
     width: 100%;
     padding: 4px 8px;
     font-size: 12px;
@@ -62,7 +62,7 @@
     outline: none;
   }
   
-  .task-select:focus {
+  .conversation-select:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 1px #3b82f6;
   }

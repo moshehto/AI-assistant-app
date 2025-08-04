@@ -1,27 +1,27 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  openChatbotWindow: (task) => ipcRenderer.send('open-chatbot-window', task),
-  openTaskManagerWindow: () => ipcRenderer.send('task-manager-window'),
+  openChatbotWindow: (conversation) => ipcRenderer.send('open-chatbot-window', conversation),
+  openconversationManagerWindow: () => ipcRenderer.send('conversation-manager-window'),
   openFileManagerWindow: () => ipcRenderer.send('file-manager-window'),
 
   minimizeWindow: () => ipcRenderer.send('minimize-window'),
 
-  sendNewTask: (taskName) => ipcRenderer.send('new-task', taskName),
+  sendNewconversation: (conversationName) => ipcRenderer.send('new-conversation', conversationName),
 
-  onNewTask: (callback) => ipcRenderer.on('new-task', callback),
-  removeNewTaskListener: (callback) => ipcRenderer.removeListener('new-task', callback),
+  onNewconversation: (callback) => ipcRenderer.on('new-conversation', callback),
+  removeNewconversationListener: (callback) => ipcRenderer.removeListener('new-conversation', callback),
 
-  deleteTask: (taskValue) => ipcRenderer.send('delete-task', taskValue),
-  onDeleteTask: (callback) => ipcRenderer.on('delete-task', callback),
-  removeDeleteTaskListener: (callback) => ipcRenderer.removeListener('delete-task', callback),
+  deleteconversation: (conversationValue) => ipcRenderer.send('delete-conversation', conversationValue),
+  onDeleteconversation: (callback) => ipcRenderer.on('delete-conversation', callback),
+  removeDeleteconversationListener: (callback) => ipcRenderer.removeListener('delete-conversation', callback),
 
-  getTaskList: () => ipcRenderer.invoke('get-task-list'),
+  getconversationList: () => ipcRenderer.invoke('get-conversation-list'),
 
-  getInitialTask: () => {
-    ipcRenderer.send('get-initial-task');
+  getInitialconversation: () => {
+    ipcRenderer.send('get-initial-conversation');
     return new Promise(resolve => {
-      ipcRenderer.once('set-task', (_, task) => resolve(task));
+      ipcRenderer.once('set-conversation', (_, conversation) => resolve(conversation));
     });
   }
 });
