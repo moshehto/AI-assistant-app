@@ -89,7 +89,7 @@ function createconversationManagerWindow() {
     width: 400,
     height: 300,
     alwaysOnTop: true,
-    title: 'conversation Manager',
+    title: 'Conversation Manager',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
     }

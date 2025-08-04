@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import '../styling/conversationmanager.css';
 
-export default function ConversationManager() {
+export default function ConversationManager({ onClose }) {
   const [newConversationName, setNewConversationName] = useState('');
   const [localConversations, setLocalConversations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [deletingConversations, setDeletingConversations] = useState(new Set());
 
   const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
 
@@ -29,13 +31,15 @@ export default function ConversationManager() {
       // Map conversations to display format
       const mapped = conversations.map(value => {
         let label;
+        let icon;
         if (value === 'default') {
-          label = '🗂️ Default Conversation';
+          label = 'Default Conversation';
+          icon = '🗂️';
         } else {
-          const name = value.replace(/_/g, ' ');
-          label = `🆕 ${name}`;
+          label = value.replace(/_/g, ' ');
+          icon = '🗂️';
         }
-        return { label, value };
+        return { label, value, icon };
       });
       
       setLocalConversations(mapped);
@@ -77,7 +81,11 @@ export default function ConversationManager() {
       }
 
       // Add to local state immediately for better UX
-      const newConversation = { label: `🆕 ${trimmed}`, value };
+      const newConversation = { 
+        label: trimmed, 
+        value, 
+        icon: '🗂️'
+      };
       setLocalConversations(prev => [...prev, newConversation]);
 
       setNewConversationName('');
@@ -100,7 +108,7 @@ export default function ConversationManager() {
       return;
     }
 
-    setLoading(true);
+    setDeletingConversations(prev => new Set([...prev, value]));
     setError('');
 
     try {
@@ -115,6 +123,7 @@ export default function ConversationManager() {
 
       // Remove from local state immediately
       setLocalConversations(prev => prev.filter(t => t.value !== value));
+      setShowDeleteConfirm(null);
 
       // Refresh conversations from server to ensure sync
       setTimeout(() => fetchConversations(), 1000);
@@ -122,16 +131,17 @@ export default function ConversationManager() {
     } catch (err) {
       console.error('❌ Failed to delete conversation:', err);
       setError(`Failed to delete conversation: ${err.message}`);
-      
-      // Restore the conversation in local state if deletion failed
-      fetchConversations();
     } finally {
-      setLoading(false);
+      setDeletingConversations(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(value);
+        return newSet;
+      });
     }
   };
 
   const handleClearDefaultConversation = async () => {
-    setLoading(true);
+    setDeletingConversations(prev => new Set([...prev, 'default']));
     setError('');
 
     try {
@@ -154,12 +164,17 @@ export default function ConversationManager() {
       }
 
       setError('Default conversation cleared successfully');
+      setShowDeleteConfirm(null);
       
     } catch (err) {
       console.error('❌ Failed to clear default conversation:', err);
       setError(`Failed to clear default conversation: ${err.message}`);
     } finally {
-      setLoading(false);
+      setDeletingConversations(prev => {
+        const newSet = new Set(prev);
+        newSet.delete('default');
+        return newSet;
+      });
     }
   };
 
@@ -169,70 +184,156 @@ export default function ConversationManager() {
     }
   };
 
+  const getConversationIcon = (type) => {
+    return type === 'default' ? '🗂️' : '🗂️';
+  };
+
   return (
-    <div className="conversation-manager-overlay">
-      <div className="conversation-manager-modal">
-        <div className="conversation-manager-header">
-          <h3>🧠 Manage Conversations</h3>
-          <button 
-            className="refresh-btn"
+    <div className="conversation-manager">
+      {/* Native-style Header */}
+      <div className="header">
+        <div className="header-row">
+          <h1 className="title">Conversation Manager</h1>
+          <button
             onClick={fetchConversations}
             disabled={loading}
-            title="Refresh conversations"
+            className={`refresh-btn ${loading ? 'disabled' : ''}`}
           >
-            {loading ? '⏳' : '🔄'}
+            <span className={`refresh-icon ${loading ? 'spinning' : ''}`}>🔄</span>
+            Refresh
           </button>
         </div>
-
-        {error && (
-          <div className={`error-message ${error.includes('successfully') ? 'success' : 'error'}`}>
-            {error}
-          </div>
-        )}
-
-        <div className="conversations-container">
-          {loading && localConversations.length === 0 ? (
-            <div className="loading-state">Loading Conversations...</div>
-          ) : (
-            <ul>
-              {localConversations.map((conversation, i) => (
-                <li key={i} className="conversation-item">
-                  <span className="conversation-label">{conversation.label}</span>
-                  <button 
-                    className="delete-btn"
-                    onClick={() => handleDelete(conversation.value)}
-                    disabled={loading}
-                    title={conversation.value === 'default' ? 'Clear default conversation files' : 'Delete conversation and all files'}
-                  >
-                    {conversation.value === 'default' ? '🗑️ Clear' : '🗑️'}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="conversation-input">
+        
+        <div className="add-conversation-row">
           <input
             type="text"
             value={newConversationName}
             onChange={(e) => setNewConversationName(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="New Conversation Name"
+            placeholder="Enter conversation name..."
             disabled={loading}
+            className="conversation-input"
           />
           <button 
             onClick={handleAdd}
             disabled={loading || !newConversationName.trim()}
+            className={`add-btn ${(loading || !newConversationName.trim()) ? 'disabled' : ''}`}
           >
-            {loading ? '⏳' : '➕ Add'}
+            + Add
           </button>
         </div>
-        
-        <div className="conversation-count">
-          {localConversations.length} Conversation{localConversations.length !== 1 ? 's' : ''} total
-        </div>
       </div>
+
+      {/* Content */}
+      <div className="content">
+        {error && (
+          <div className={`error-alert ${error.includes('successfully') ? 'success-alert' : ''}`}>
+            <span className="error-icon">⚠️</span>
+            <span className="error-text">{error}</span>
+            <button onClick={() => setError('')} className="error-close">
+              ✕
+            </button>
+          </div>
+        )}
+
+        {loading && localConversations.length === 0 ? (
+          <div className="loading-state">
+            <span className="loading-icon spinning">🔄</span>
+            <p>Loading...</p>
+          </div>
+        ) : (
+          <div className="conversations-container">
+            <div className="conversations-content">
+              <div className="conversations-count">{localConversations.length} conversations</div>
+              
+              {localConversations.length === 0 ? (
+                <div className="empty-state">
+                  <p>No conversations found</p>
+                </div>
+              ) : (
+                <div className="conversations-list">
+                  {localConversations.map((conversation, i) => (
+                    <div key={i} className="conversation-card">
+                      <div className="conversation-content">
+                        <div className="conversation-header">
+                          <div className="conversation-info">
+                            <span className="conversation-icon">
+                              {getConversationIcon(conversation.value)}
+                            </span>
+                            <div className="conversation-details">
+                              <div className="conversation-name" title={conversation.label}>
+                                {conversation.label}
+                              </div>
+                              {conversation.value === 'default' && (
+                                <div className="conversation-type">DEFAULT</div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <button
+                            onClick={() => setShowDeleteConfirm(conversation.value)}
+                            disabled={deletingConversations.has(conversation.value)}
+                            className={`delete-btn ${deletingConversations.has(conversation.value) ? 'disabled' : ''}`}
+                            title={conversation.value === 'default' ? 'Clear default conversation files' : 'Delete conversation and all files'}
+                          >
+                            {deletingConversations.has(conversation.value) ? (
+                              <span className="spinning">🔄</span>
+                            ) : (
+                              conversation.value === 'default' ? '🗑️' : '❌'
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Simple Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-content">
+              <div className="modal-header">
+                <span className="warning-icon">⚠️</span>
+                <h3 className="modal-title">
+                  {showDeleteConfirm === 'default' ? 'Clear Conversation' : 'Delete Conversation'}
+                </h3>
+              </div>
+              
+              <p className="modal-text">
+                {showDeleteConfirm === 'default' 
+                  ? 'Clear all files from the default conversation? This cannot be undone.'
+                  : 'Delete this conversation and all associated files? This cannot be undone.'
+                }
+              </p>
+              
+              <div className="modal-actions">
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="cancel-btn"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(showDeleteConfirm)}
+                  disabled={deletingConversations.has(showDeleteConfirm)}
+                  className={`delete-confirm-btn ${deletingConversations.has(showDeleteConfirm) ? 'disabled' : ''}`}
+                >
+                  {deletingConversations.has(showDeleteConfirm) 
+                    ? (showDeleteConfirm === 'default' ? 'Clearing...' : 'Deleting...') 
+                    : (showDeleteConfirm === 'default' ? 'Clear' : 'Delete')
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
