@@ -17,6 +17,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeDeleteTaskListener: (callback) => ipcRenderer.removeListener('delete-task', callback),
 
   getTaskList: () => ipcRenderer.invoke('get-task-list'),
+  
+  notifyAuthenticated: () => ipcRenderer.send('user-authenticated'),
+  notifyLoggedOut: () => ipcRenderer.send('user-logged-out'),
 
   getInitialTask: () => {
     ipcRenderer.send('get-initial-task');
@@ -25,4 +28,3 @@ contextBridge.exposeInMainWorld('electronAPI', {
     });
   }
 });
-

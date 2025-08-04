@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
-let chatbotWindow; // Track chatbot window instance
+let chatbotWindow;
 let taskList = ['default'];
 
 const TASKS_FILE = path.join(__dirname, 'tasks.json');
@@ -27,22 +27,61 @@ function saveTasksToDisk() {
   fs.writeFileSync(TASKS_FILE, JSON.stringify(taskList, null, 2));
 }
 
-// Main floating bar (unchanged)
+// Main window - starts as normal window for login
 function createMainWindow() {
   mainWindow = new BrowserWindow({
-    width: 500,
-    height: 70,
+    width: 800,
+    height: 800,
     frame: false,
     transparent: true,
-    resizable: false,
-    alwaysOnTop: true,
+    resizable: true,
+    alwaysOnTop: false,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true
     }
   });
 
-  mainWindow.loadURL('http://localhost:5173/index.html');
+  mainWindow.loadURL('http://localhost:5173');
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+    app.quit();
+  });
 }
+
+// Transform window to floating bar after authentication
+ipcMain.on('user-authenticated', () => {
+  console.log('User authenticated, transforming to floating bar...');
+  
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    // Set to floating bar dimensions
+    mainWindow.setSize(490, 70);
+    mainWindow.setAlwaysOnTop(true);
+    mainWindow.setResizable(false);
+    
+    // Remove frame for floating bar look
+    
+    // Center the floating bar at top of screen
+    const { width } = require('electron').screen.getPrimaryDisplay().workAreaSize;
+  }
+});
+
+// Restore window for login after logout
+ipcMain.on('user-logged-out', () => {
+  console.log('User logged out, restoring login window...');
+  
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    // Restore to login window size
+    mainWindow.setSize(800, 600);
+    mainWindow.center();
+    mainWindow.setAlwaysOnTop(false);
+    mainWindow.setResizable(true);
+    mainWindow.setMenuBarVisibility(true);
+    mainWindow.setAutoHideMenuBar(false);
+  }
+});
 
 // Create or show chatbot window
 function createOrToggleChatbotWindow(task) {
@@ -69,7 +108,8 @@ function createOrToggleChatbotWindow(task) {
       }
     });
 
-    chatbotWindow.loadURL('http://localhost:5173/chatbot.html');
+    // Load chatbot route instead of HTML file
+    chatbotWindow.loadURL('http://localhost:5173/chatbot');
 
     chatbotWindow.webContents.once('did-finish-load', () => {
       ipcMain.once('get-initial-task', (event) => {
@@ -78,12 +118,12 @@ function createOrToggleChatbotWindow(task) {
     });
 
     chatbotWindow.on('closed', () => {
-      chatbotWindow = null; // Clean up reference
+      chatbotWindow = null;
     });
   }
 }
 
-// Task manager window (unchanged)
+// Task manager window
 function createTaskManagerWindow() {
   const taskWindow = new BrowserWindow({
     width: 400,
@@ -94,7 +134,7 @@ function createTaskManagerWindow() {
       preload: path.join(__dirname, 'preload.js')
     }
   });
-  taskWindow.loadURL('http://localhost:5173/taskmanager.html');
+  taskWindow.loadURL('http://localhost:5173/taskmanager');
 }
 
 function createFileManagerWindow() {
@@ -107,24 +147,27 @@ function createFileManagerWindow() {
       preload: path.join(__dirname, 'preload.js')
     }
   });
-  taskWindow.loadURL('http://localhost:5173/filemanager.html');
+  taskWindow.loadURL('http://localhost:5173/filemanager');
 }
 
-
-// IPC handlers (mostly unchanged)
+// IPC handlers
 ipcMain.on('new-task', (event, taskName) => {
   const taskValue = taskName.toLowerCase().replace(/\s+/g, '_');
   if (!taskList.includes(taskValue)) {
     taskList.push(taskValue);
     saveTasksToDisk();
   }
-  mainWindow.webContents.send('new-task', taskName);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('new-task', taskName);
+  }
 });
 
 ipcMain.on('delete-task', (event, taskValue) => {
   taskList = taskList.filter(t => t !== taskValue);
   saveTasksToDisk();
-  mainWindow.webContents.send('delete-task', taskValue);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('delete-task', taskValue);
+  }
 });
 
 ipcMain.handle('get-task-list', () => {
@@ -139,7 +182,6 @@ ipcMain.on('task-manager-window', createTaskManagerWindow);
 
 ipcMain.on('file-manager-window', createFileManagerWindow);
 
-
 ipcMain.on('minimize-window', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (win) win.minimize();
@@ -148,10 +190,11 @@ ipcMain.on('minimize-window', (event) => {
 // Register global shortcut on ready
 app.whenReady().then(() => {
   loadTasksFromDisk();
+  
+  // Create main window (starts as login)
   createMainWindow();
 
   globalShortcut.register('Command+Shift+H', () => {
-    // Toggle chatbot window visibility on shortcut
     createOrToggleChatbotWindow();
   });
 });

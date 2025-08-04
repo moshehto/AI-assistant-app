@@ -12,6 +12,7 @@ export default defineConfig({
         taskmanager: path.resolve(__dirname, 'taskmanager.html'),
         filemanager: path.resolve(__dirname, 'filemanager.html'),
 
+
       }
     }
   }
