@@ -30,7 +30,7 @@ function saveconversationsToDisk() {
 // Main floating bar (unchanged)
 function createMainWindow() {
   mainWindow = new BrowserWindow({
-    width: 500,
+    width: 520,
     height: 70,
     frame: false,
     transparent: true,

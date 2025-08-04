@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import '../styling/conversationmanager.css';
 
-export default function conversationManager() {
-  const [newconversationName, setNewconversationName] = useState('');
-  const [localconversations, setLocalconversations] = useState([]);
+export default function ConversationManager() {
+  const [newConversationName, setNewConversationName] = useState('');
+  const [localConversations, setLocalConversations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -11,10 +11,10 @@ export default function conversationManager() {
 
   // Fetch conversations from backend
   useEffect(() => {
-    fetchconversations();
+    fetchConversations();
   }, []);
 
-  const fetchconversations = async () => {
+  const fetchConversations = async () => {
     setLoading(true);
     setError('');
     try {
@@ -38,50 +38,24 @@ export default function conversationManager() {
         return { label, value };
       });
       
-      setLocalconversations(mapped);
-      
-      // Also update Electron if available (for local storage sync)
-      if (window.electronAPI?.updateconversationList) {
-        window.electronAPI.updateconversationList(conversations);
-      }
+      setLocalConversations(mapped);
       
     } catch (err) {
       console.error('❌ Failed to fetch conversations:', err);
       setError('Failed to load conversations from server');
-      
-      // Fallback to Electron API if available
-      try {
-        if (window.electronAPI?.getconversationList) {
-          const rawconversations = await window.electronAPI.getconversationList();
-          const mapped = rawconversations.map(value => {
-            let label;
-            if (value === 'default') {
-              label = '🗂️ Default conversation';
-            } else {
-              const name = value.replace(/_/g, ' ');
-              label = `🆕 ${name}`;
-            }
-            return { label, value };
-          });
-          setLocalconversations(mapped);
-          setError('Using local conversations (server unavailable)');
-        }
-      } catch (electronErr) {
-        console.error('❌ Electron fallback failed:', electronErr);
-      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleAdd = async () => {
-    const trimmed = newconversationName.trim();
+    const trimmed = newConversationName.trim();
     if (!trimmed) return;
 
     const value = trimmed.toLowerCase().replace(/\s+/g, '_');
-    const exists = localconversations.some(t => t.value === value);
+    const exists = localConversations.some(t => t.value === value);
     if (exists) {
-      setError('conversation already exists');
+      setError('Conversation already exists');
       return;
     }
 
@@ -103,18 +77,13 @@ export default function conversationManager() {
       }
 
       // Add to local state immediately for better UX
-      const newconversation = { label: `🆕 ${trimmed}`, value };
-      setLocalconversations(prev => [...prev, newconversation]);
+      const newConversation = { label: `🆕 ${trimmed}`, value };
+      setLocalConversations(prev => [...prev, newConversation]);
 
-      // Update Electron if available
-      if (window.electronAPI?.sendNewconversation) {
-        window.electronAPI.sendNewconversation(trimmed);
-      }
-
-      setNewconversationName('');
+      setNewConversationName('');
       
       // Refresh conversations from server to ensure sync
-      setTimeout(() => fetchconversations(), 1000);
+      setTimeout(() => fetchConversations(), 1000);
 
     } catch (err) {
       console.error('❌ Failed to add conversation:', err);
@@ -127,7 +96,7 @@ export default function conversationManager() {
   const handleDelete = async (value) => {
     if (value === 'default') {
       // For default conversation, we'll clear its contents instead of deleting
-      handleClearDefaultconversation();
+      handleClearDefaultConversation();
       return;
     }
 
@@ -145,28 +114,23 @@ export default function conversationManager() {
       }
 
       // Remove from local state immediately
-      setLocalconversations(prev => prev.filter(t => t.value !== value));
-
-      // Update Electron if available
-      if (window.electronAPI?.deleteconversation) {
-        window.electronAPI.deleteconversation(value);
-      }
+      setLocalConversations(prev => prev.filter(t => t.value !== value));
 
       // Refresh conversations from server to ensure sync
-      setTimeout(() => fetchconversations(), 1000);
+      setTimeout(() => fetchConversations(), 1000);
 
     } catch (err) {
       console.error('❌ Failed to delete conversation:', err);
       setError(`Failed to delete conversation: ${err.message}`);
       
       // Restore the conversation in local state if deletion failed
-      fetchconversations();
+      fetchConversations();
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClearDefaultconversation = async () => {
+  const handleClearDefaultConversation = async () => {
     setLoading(true);
     setError('');
 
@@ -212,7 +176,7 @@ export default function conversationManager() {
           <h3>🧠 Manage Conversations</h3>
           <button 
             className="refresh-btn"
-            onClick={fetchconversations}
+            onClick={fetchConversations}
             disabled={loading}
             title="Refresh conversations"
           >
@@ -227,11 +191,11 @@ export default function conversationManager() {
         )}
 
         <div className="conversations-container">
-          {loading && localconversations.length === 0 ? (
+          {loading && localConversations.length === 0 ? (
             <div className="loading-state">Loading Conversations...</div>
           ) : (
             <ul>
-              {localconversations.map((conversation, i) => (
+              {localConversations.map((conversation, i) => (
                 <li key={i} className="conversation-item">
                   <span className="conversation-label">{conversation.label}</span>
                   <button 
@@ -251,22 +215,22 @@ export default function conversationManager() {
         <div className="conversation-input">
           <input
             type="text"
-            value={newconversationName}
-            onChange={(e) => setNewconversationName(e.target.value)}
+            value={newConversationName}
+            onChange={(e) => setNewConversationName(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="New Conversation Name"
             disabled={loading}
           />
           <button 
             onClick={handleAdd}
-            disabled={loading || !newconversationName.trim()}
+            disabled={loading || !newConversationName.trim()}
           >
             {loading ? '⏳' : '➕ Add'}
           </button>
         </div>
         
         <div className="conversation-count">
-          {localconversations.length} Conversation{localconversations.length !== 1 ? 's' : ''} total
+          {localConversations.length} Conversation{localConversations.length !== 1 ? 's' : ''} total
         </div>
       </div>
     </div>
