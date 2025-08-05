@@ -3,7 +3,9 @@ const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
-let chatbotWindow; // Track chatbot window instance
+let chatbotWindow;
+let conversationManagerWindow;
+let fileManagerWindow;
 let conversationList = ['default'];
 
 const conversationS_FILE = path.join(__dirname, 'conversations.json');
@@ -27,7 +29,7 @@ function saveconversationsToDisk() {
   fs.writeFileSync(conversationS_FILE, JSON.stringify(conversationList, null, 2));
 }
 
-// Main floating bar (unchanged)
+// CREATE WINDOWS WITH DIFFERENT ROUTES - KEY CHANGE
 function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 520,
@@ -41,10 +43,10 @@ function createMainWindow() {
     }
   });
 
-  mainWindow.loadURL('http://localhost:5173/index.html');
+  // Single entry point with route parameter
+  mainWindow.loadURL('http://localhost:5173/?window=main');
 }
 
-// Create or show chatbot window
 function createOrToggleChatbotWindow(conversation) {
   if (chatbotWindow && !chatbotWindow.isDestroyed()) {
     if (chatbotWindow.isVisible()) {
@@ -69,23 +71,22 @@ function createOrToggleChatbotWindow(conversation) {
       }
     });
 
-    chatbotWindow.loadURL('http://localhost:5173/chatbot.html');
-
-    chatbotWindow.webContents.once('did-finish-load', () => {
-      ipcMain.once('get-initial-conversation', (event) => {
-        event.reply('set-conversation', conversation || 'default');
-      });
-    });
+    // Same app, different route
+    chatbotWindow.loadURL(`http://localhost:5173/?window=chatbot&conversation=${conversation || 'default'}`);
 
     chatbotWindow.on('closed', () => {
-      chatbotWindow = null; // Clean up reference
+      chatbotWindow = null;
     });
   }
 }
 
-// conversation manager window (unchanged)
-function createconversationManagerWindow() {
-  const conversationWindow = new BrowserWindow({
+function createConversationManagerWindow() {
+  if (conversationManagerWindow && !conversationManagerWindow.isDestroyed()) {
+    conversationManagerWindow.focus();
+    return;
+  }
+
+  conversationManagerWindow = new BrowserWindow({
     width: 400,
     height: 300,
     alwaysOnTop: true,
@@ -94,11 +95,22 @@ function createconversationManagerWindow() {
       preload: path.join(__dirname, 'preload.js')
     }
   });
-  conversationWindow.loadURL('http://localhost:5173/conversationmanager.html');
+  
+  // Same app, different route
+  conversationManagerWindow.loadURL('http://localhost:5173/?window=conversation-manager');
+  
+  conversationManagerWindow.on('closed', () => {
+    conversationManagerWindow = null;
+  });
 }
 
 function createFileManagerWindow() {
-  const conversationWindow = new BrowserWindow({
+  if (fileManagerWindow && !fileManagerWindow.isDestroyed()) {
+    fileManagerWindow.focus();
+    return;
+  }
+
+  fileManagerWindow = new BrowserWindow({
     width: 400,
     height: 300,
     alwaysOnTop: true,
@@ -107,11 +119,16 @@ function createFileManagerWindow() {
       preload: path.join(__dirname, 'preload.js')
     }
   });
-  conversationWindow.loadURL('http://localhost:5173/filemanager.html');
+  
+  // Same app, different route
+  fileManagerWindow.loadURL('http://localhost:5173/?window=file-manager');
+  
+  fileManagerWindow.on('closed', () => {
+    fileManagerWindow = null;
+  });
 }
 
-
-// IPC handlers (mostly unchanged)
+// IPC handlers (unchanged)
 ipcMain.on('new-conversation', (event, conversationName) => {
   const conversationValue = conversationName.toLowerCase().replace(/\s+/g, '_');
   if (!conversationList.includes(conversationValue)) {
@@ -135,28 +152,23 @@ ipcMain.on('open-chatbot-window', (event, conversation) => {
   createOrToggleChatbotWindow(conversation || 'default');
 });
 
-ipcMain.on('conversation-manager-window', createconversationManagerWindow);
-
+ipcMain.on('conversation-manager-window', createConversationManagerWindow);
 ipcMain.on('file-manager-window', createFileManagerWindow);
-
 
 ipcMain.on('minimize-window', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (win) win.minimize();
 });
 
-// Register global shortcut on ready
 app.whenReady().then(() => {
   loadconversationsFromDisk();
   createMainWindow();
 
   globalShortcut.register('Command+Shift+H', () => {
-    // Toggle chatbot window visibility on shortcut
     createOrToggleChatbotWindow();
   });
 });
 
-// Clean up global shortcuts on quit
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
 });

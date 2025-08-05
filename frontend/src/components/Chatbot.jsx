@@ -1,14 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { useApp } from '../contexts/AppContext';
 import '../styling/chatbot.css';
 
-export default function Chatbot() {
+export default function Chatbot({ conversationId }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentconversation, setCurrentconversation] = useState('default');
   const [darkMode, setDarkMode] = useState(true);
   const scrollRef = useRef(null);
+
+  // Access shared state if needed
+  const { state } = useApp();
 
   const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
 
@@ -30,19 +34,29 @@ export default function Chatbot() {
     }
   };
 
-  // ✅ Initialize conversation and theme
+  // ✅ Initialize conversation and theme - UPDATED for new architecture
   useEffect(() => {
     const init = async () => {
-      const conversation = await window.electronAPI?.getInitialconversation?.();
-      const safeconversation = conversation || 'default';
-      setCurrentconversation(safeconversation);
-      loadChatHistory(safeconversation);
+      let conversation = 'default';
+      
+      // Try to get conversation from props first (URL parameter)
+      if (conversationId) {
+        conversation = conversationId;
+      } else {
+        // Fallback to electron API if available
+        const electronConversation = await window.electronAPI?.getInitialconversation?.();
+        conversation = electronConversation || 'default';
+      }
+      
+      setCurrentconversation(conversation);
+      loadChatHistory(conversation);
 
-      const savedMode = localStorage.getItem('chatbot-dark-mode');
+      // Load theme preference - use in-memory storage instead of localStorage
+      const savedMode = sessionStorage.getItem('chatbot-dark-mode');
       if (savedMode !== null) setDarkMode(savedMode === 'true');
     };
     init();
-  }, []);
+  }, [conversationId]); // Re-run when conversationId prop changes
 
   // ✅ Scroll to bottom on new messages
   useEffect(() => {
@@ -52,10 +66,11 @@ export default function Chatbot() {
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
-    localStorage.setItem('chatbot-dark-mode', newMode.toString());
+    // Use sessionStorage instead of localStorage for better compatibility
+    sessionStorage.setItem('chatbot-dark-mode', newMode.toString());
   };
 
-  // ✅ FIXED: Send message with proper state management
+  // ✅ Send message with proper state management
   const sendMessage = async () => {
     const trimmed = input.trim();
     if (!trimmed || loading) return; // Prevent multiple submissions
@@ -110,7 +125,7 @@ export default function Chatbot() {
     }
   };
 
-  // ✅ FIXED: Upload handler with proper state management and correct endpoint
+  // ✅ Upload handler with proper state management and correct endpoint
   const handleFileUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -129,7 +144,6 @@ export default function Chatbot() {
     // Process files one by one (your endpoint expects single file)
     for (const file of files) {
       const formData = new FormData();
-      formData.append('user_id', 'user123'); // Add user_id as required
       formData.append('conversation_id', currentconversation);
       formData.append('file', file); // Single file as expected
 
@@ -191,7 +205,13 @@ export default function Chatbot() {
     <div className={`chatbot-container ${darkMode ? 'dark' : 'light'}`}>
       {/* Header */}
       <div className="chatbot-header">
-        <div className="chatbot-title">Private.ly</div>
+        <div className="chatbot-title">
+          Private.ly
+          {/* Show current conversation in title */}
+          <span className="conversation-indicator">
+            {currentconversation !== 'default' ? ` - ${currentconversation.replace(/_/g, ' ')}` : ''}
+          </span>
+        </div>
         <div className="chatbot-header-buttons">
           <button className="chatbot-toggle-mode" onClick={toggleDarkMode}>
             {darkMode ? '🌞' : '🌙'}

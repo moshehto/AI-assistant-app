@@ -1,19 +1,24 @@
 import React from 'react';
 
 export default function UploadFile({ 
-  currentconversation = "default", 
-  userId = "user123", 
-  groupId = null,
-  onUploadComplete = null, // Callback to update chat messages
-  className = "", // Custom CSS classes
-  style = {}, // Inline styles
-  title = "Upload File", // Button title/tooltip
-  children = null, // Custom button content
-  disabled = false, // Disable button
+  currentConversation = "default", 
+  onUploadComplete = null,
+  className = "",
+  style = {},
+  title = "Upload File",
+  children = null,
+  disabled = false,
   acceptedFiles = ".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.json,.png,.jpeg,.jpg,.heic",
-  ...otherProps // Any other button props
+  ...otherProps
 }) {
   const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleUpload();
+    }
+  };
 
   const handleUpload = () => {
     const input = document.createElement('input');
@@ -37,30 +42,23 @@ export default function UploadFile({
       const uploadedFiles = [];
       const failedFiles = [];
 
-      // Process files one by one (your endpoint expects single file)
+      // Process files one by one
       for (const file of files) {
         const formData = new FormData();
-        formData.append('user_id', userId);
-        formData.append('conversation_id', currentconversation);
-        formData.append('file', file); // Fixed: was referencing undefined 'file' variable
+        formData.append('conversation_id', currentConversation);
+        formData.append('file', file);
 
         try {
-          console.log(`📦 Uploading ${file.name} to backend...`);
-
           const res = await fetch(`${API_BASE}/upload-and-index`, {
             method: 'POST',
             body: formData,
           });
 
-          const responseText = await res.text();
-          console.log(`📬 Upload response for ${file.name}:`, res.status, responseText);
-
           if (res.ok) {
-            const data = JSON.parse(responseText);
+            const data = await res.json();
             uploadedFiles.push(data.filename || file.name);
-            console.log(`✅ Successfully uploaded ${file.name}`);
           } else {
-            throw new Error(`Upload failed: ${res.status} ${responseText}`);
+            throw new Error(`Upload failed: ${res.status}`);
           }
 
         } catch (err) {
@@ -74,19 +72,19 @@ export default function UploadFile({
       if (uploadedFiles.length > 0 && failedFiles.length === 0) {
         resultMessage = {
           role: 'assistant',
-          content: `✅ Successfully uploaded ${uploadedFiles.length} file(s) to conversation "${currentconversation}". You can now ask questions about your documents!`,
+          content: `✅ Successfully uploaded ${uploadedFiles.length} file(s) to "${currentConversation}". You can now ask questions about your documents!`,
           id: `upload-success-${Date.now()}`
         };
       } else if (uploadedFiles.length > 0 && failedFiles.length > 0) {
         resultMessage = {
           role: 'assistant',
-          content: `⚠️ Uploaded ${uploadedFiles.length} file(s) successfully, but ${failedFiles.length} failed: ${failedFiles.join(', ')}`,
+          content: `⚠️ Uploaded ${uploadedFiles.length} file(s), but ${failedFiles.length} failed: ${failedFiles.join(', ')}`,
           id: `upload-partial-${Date.now()}`
         };
       } else {
         resultMessage = {
           role: 'assistant',
-          content: '❌ All uploads failed. Please check your connection and try again.',
+          content: '❌ All uploads failed. Please try again.',
           id: `upload-error-${Date.now()}`
         };
       }
@@ -94,9 +92,9 @@ export default function UploadFile({
       if (onUploadComplete) {
         onUploadComplete(resultMessage);
       } else {
-        // Fallback: show alert if no callback (for floating bar usage)
+        // Fallback: show alert if no callback provided
         if (uploadedFiles.length > 0) {
-          alert(`✅ Uploaded ${uploadedFiles.length} file(s) to conversation "${currentconversation}"`);
+          alert(`✅ Uploaded ${uploadedFiles.length} file(s) to "${currentConversation}"`);
         } else {
           alert('❌ Upload failed. Please try again.');
         }
@@ -111,6 +109,7 @@ export default function UploadFile({
       className={className} 
       title={title}
       onClick={handleUpload}
+      onKeyDown={handleKeyPress}
       style={style}
       disabled={disabled}
       {...otherProps}

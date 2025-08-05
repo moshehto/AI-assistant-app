@@ -1,56 +1,38 @@
 import React, { useState, useEffect } from 'react';
+import { useApp } from '../contexts/AppContext';
 import '../styling/conversationmanager.css';
 
 export default function ConversationManager({ onClose }) {
+  const { state, api } = useApp();
   const [newConversationName, setNewConversationName] = useState('');
   const [localConversations, setLocalConversations] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [deletingConversations, setDeletingConversations] = useState(new Set());
 
-  const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
+  // Use shared state and API
+  const { conversations, loading, error } = state;
 
-  // Fetch conversations from backend
+  // Fetch conversations on mount using shared API
   useEffect(() => {
-    fetchConversations();
+    api.fetchConversations();
   }, []);
 
-  const fetchConversations = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await fetch(`${API_BASE}/api/conversations`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  // Update local conversations when shared state changes
+  useEffect(() => {
+    const mapped = conversations.map(value => {
+      let label;
+      let icon;
+      if (value === 'default') {
+        label = 'Default Conversation';
+        icon = '🗂️';
+      } else {
+        label = value.replace(/_/g, ' ');
+        icon = '🗂️';
       }
-      
-      const data = await response.json();
-      const conversations = data.conversations || [];
-      
-      // Map conversations to display format
-      const mapped = conversations.map(value => {
-        let label;
-        let icon;
-        if (value === 'default') {
-          label = 'Default Conversation';
-          icon = '🗂️';
-        } else {
-          label = value.replace(/_/g, ' ');
-          icon = '🗂️';
-        }
-        return { label, value, icon };
-      });
-      
-      setLocalConversations(mapped);
-      
-    } catch (err) {
-      console.error('❌ Failed to fetch conversations:', err);
-      setError('Failed to load conversations from server');
-    } finally {
-      setLoading(false);
-    }
-  };
+      return { label, value, icon };
+    });
+    setLocalConversations(mapped);
+  }, [conversations]);
 
   const handleAdd = async () => {
     const trimmed = newConversationName.trim();
@@ -59,78 +41,34 @@ export default function ConversationManager({ onClose }) {
     const value = trimmed.toLowerCase().replace(/\s+/g, '_');
     const exists = localConversations.some(t => t.value === value);
     if (exists) {
-      setError('Conversation already exists');
+      // You could dispatch an error here if needed
       return;
     }
 
-    setLoading(true);
-    setError('');
-
     try {
-      // Add to backend
-      const response = await fetch(`${API_BASE}/api/conversations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: trimmed })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create conversation: ${response.statusText}`);
-      }
-
-      // Add to local state immediately for better UX
-      const newConversation = { 
-        label: trimmed, 
-        value, 
-        icon: '🗂️'
-      };
-      setLocalConversations(prev => [...prev, newConversation]);
-
+      await api.addConversation(trimmed);
       setNewConversationName('');
-      
-      // Refresh conversations from server to ensure sync
-      setTimeout(() => fetchConversations(), 1000);
-
+      // Refresh from server
+      setTimeout(() => api.fetchConversations(), 1000);
     } catch (err) {
-      console.error('❌ Failed to add conversation:', err);
-      setError(`Failed to create conversation: ${err.message}`);
-    } finally {
-      setLoading(false);
+      console.error('Failed to add conversation:', err);
     }
   };
 
   const handleDelete = async (value) => {
     if (value === 'default') {
-      // For default conversation, we'll clear its contents instead of deleting
       handleClearDefaultConversation();
       return;
     }
 
     setDeletingConversations(prev => new Set([...prev, value]));
-    setError('');
 
     try {
-      // Delete from backend
-      const response = await fetch(`${API_BASE}/api/conversations/${encodeURIComponent(value)}`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete conversation: ${response.statusText}`);
-      }
-
-      // Remove from local state immediately
-      setLocalConversations(prev => prev.filter(t => t.value !== value));
+      await api.deleteConversation(value);
       setShowDeleteConfirm(null);
-
-      // Refresh conversations from server to ensure sync
-      setTimeout(() => fetchConversations(), 1000);
-
+      setTimeout(() => api.fetchConversations(), 1000);
     } catch (err) {
-      console.error('❌ Failed to delete conversation:', err);
-      setError(`Failed to delete conversation: ${err.message}`);
+      console.error('Failed to delete conversation:', err);
     } finally {
       setDeletingConversations(prev => {
         const newSet = new Set(prev);
@@ -142,9 +80,9 @@ export default function ConversationManager({ onClose }) {
 
   const handleClearDefaultConversation = async () => {
     setDeletingConversations(prev => new Set([...prev, 'default']));
-    setError('');
 
     try {
+      const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
       // Get all files for default conversation and delete them
       const filesResponse = await fetch(`${API_BASE}/api/files?conversation=default`);
       if (filesResponse.ok) {
@@ -163,12 +101,10 @@ export default function ConversationManager({ onClose }) {
         }
       }
 
-      setError('Default conversation cleared successfully');
       setShowDeleteConfirm(null);
       
     } catch (err) {
       console.error('❌ Failed to clear default conversation:', err);
-      setError(`Failed to clear default conversation: ${err.message}`);
     } finally {
       setDeletingConversations(prev => {
         const newSet = new Set(prev);
@@ -195,7 +131,7 @@ export default function ConversationManager({ onClose }) {
         <div className="header-row">
           <h1 className="title">Conversation Manager</h1>
           <button
-            onClick={fetchConversations}
+            onClick={() => api.fetchConversations()}
             disabled={loading}
             className={`refresh-btn ${loading ? 'disabled' : ''}`}
           >
@@ -230,7 +166,7 @@ export default function ConversationManager({ onClose }) {
           <div className={`error-alert ${error.includes('successfully') ? 'success-alert' : ''}`}>
             <span className="error-icon">⚠️</span>
             <span className="error-text">{error}</span>
-            <button onClick={() => setError('')} className="error-close">
+            <button onClick={() => {/* dispatch clear error if needed */}} className="error-close">
               ✕
             </button>
           </div>

@@ -1,40 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, RefreshCw, AlertTriangle, Check, X } from 'lucide-react';
+import { useApp } from '../contexts/AppContext';
 import '../styling/filemanager.css';
-
 
 const S3FileManager = () => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedconversation, setSelectedconversation] = useState('');
-  const [conversations, setconversations] = useState([]);
+  const [localConversations, setLocalConversations] = useState([]);
   const [deletingFiles, setDeletingFiles] = useState(new Set());
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+
+  // Access shared state and API
+  const { state, api } = useApp();
+  const { conversations } = state;
 
   // API Base URL - Render hosted backend
   const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
 
   useEffect(() => {
-    loadconversations();
+    // Load conversations using shared API
+    api.fetchConversations();
   }, []);
+
+  // Update local conversations when shared state changes
+  useEffect(() => {
+    setLocalConversations(conversations);
+  }, [conversations]);
 
   useEffect(() => {
     if (selectedconversation) {
       loadFiles();
     }
   }, [selectedconversation]);
-
-  const loadconversations = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/api/conversations`);
-      const data = await response.json();
-      setconversations(data.conversations || []);
-    } catch (err) {
-      console.error('Error loading conversations:', err);
-      setError('Failed to load conversations');
-    }
-  };
 
   const loadFiles = async () => {
     setLoading(true);
@@ -125,8 +124,10 @@ const S3FileManager = () => {
           className="conversation-select"
         >
           <option value="">Select a conversation...</option>
-          {conversations.map((conversation) => (
-            <option key={conversation} value={conversation}>{conversation}</option>
+          {localConversations.map((conversation) => (
+            <option key={conversation} value={conversation}>
+              {conversation === 'default' ? 'Default Conversation' : conversation.replace(/_/g, ' ')}
+            </option>
           ))}
         </select>
       </div>
