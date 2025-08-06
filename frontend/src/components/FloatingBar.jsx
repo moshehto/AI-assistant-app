@@ -1,3 +1,4 @@
+//floatingbar.jsx
 import React, { useState, useEffect } from 'react';
 import '../styling/floatingbar.css';
 import UploadFile from './UploadFile';
@@ -87,6 +88,26 @@ export default function FloatingBar() {
     }
   };
 
+// In floatingbar.jsx, add this handler:
+const handleUploadComplete = (message) => {
+  // Show alert based on the message content
+  if (message.content.includes('✅')) {
+    alert('✅ Upload completed successfully!');
+  } else if (message.content.includes('⚠️')) {
+    alert('⚠️ Upload partially completed - some files failed');
+  } else if (message.content.includes('❌')) {
+    alert('❌ Upload failed - please try again');
+  }
+};
+
+// Then update your UploadFile usage:
+<UploadFile 
+  currentconversation={selectedConversation} 
+  onUploadComplete={handleUploadComplete}
+  className="bar-btn"
+  title="Upload File"
+/>
+
   return (
     <div className="floating-bar">
       <select
@@ -108,6 +129,7 @@ export default function FloatingBar() {
       {/* ✅ Now matches your theme perfectly */}
       <UploadFile 
         currentconversation={selectedConversation} 
+        onUploadComplete={handleUploadComplete}  // Add this line
         className="bar-btn"
         title="Upload File"
       />
