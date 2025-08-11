@@ -1,3 +1,4 @@
+//FileManager.jsx
 import React, { useState, useEffect } from 'react';
 import { Trash2, RefreshCw, AlertTriangle, Check, X } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
@@ -12,37 +13,80 @@ const S3FileManager = () => {
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
-  // Access shared state and API
+  // Access shared state and API - GET AUTH TOKEN
   const { state, api } = useApp();
-  const { conversations } = state;
+  const { conversations, authToken } = state; // ADDED: Get authToken from state
 
   // API Base URL - Render hosted backend
   const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
 
+  // ADDED: Helper function to get auth headers
+  const getAuthHeaders = () => {
+    if (!authToken) {
+      console.warn('No auth token available');
+      return {};
+    }
+    return {
+      'Authorization': `Bearer ${authToken}`
+    };
+  };
+
   useEffect(() => {
-    // Load conversations using shared API
-    api.fetchConversations();
-  }, []);
+    // Fetch conversations on mount using shared API
+    const loadConversations = async () => {
+      if (authToken) {
+        await api.fetchConversations();
+        
+        // Force a re-fetch after a short delay if no conversations
+        setTimeout(async () => {
+          if (conversations.length === 0) {
+            console.log('FileManager - Re-fetching conversations...');
+            await api.fetchConversations();
+          }
+        }, 500);
+      }
+    };
+    loadConversations();
+  }, [authToken]);
 
   // Update local conversations when shared state changes
   useEffect(() => {
-    setLocalConversations(conversations);
+    console.log('FileManager - Conversations from state:', conversations); // Debug log
+    if (conversations && conversations.length > 0) {
+      setLocalConversations(conversations);
+      
+      // If no conversation is selected and we have conversations, select the first one
+      if (!selectedconversation && conversations.length > 0) {
+        setSelectedconversation(conversations[0]);
+      }
+    }
   }, [conversations]);
 
   useEffect(() => {
-    if (selectedconversation) {
+    if (selectedconversation && authToken) { // ADDED: Check for authToken
       loadFiles();
     }
-  }, [selectedconversation]);
+  }, [selectedconversation, authToken]); // ADDED: authToken as dependency
 
   const loadFiles = async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${API_BASE}/api/files?conversation=${encodeURIComponent(selectedconversation)}`);
+      const response = await fetch(
+        `${API_BASE}/api/files?conversation=${encodeURIComponent(selectedconversation)}`,
+        {
+          headers: getAuthHeaders() // ADDED: Include auth headers
+        }
+      );
+      
       if (!response.ok) {
+        if (response.status === 401) {
+          setError('Authentication required. Please login again.');
+          return;
+        }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+      
       const data = await response.json();
       setFiles(data.files || []);
     } catch (err) {
@@ -56,11 +100,19 @@ const S3FileManager = () => {
   const handleDeleteFile = async (fileId) => {
     setDeletingFiles(prev => new Set([...prev, fileId]));
     try {
-      const response = await fetch(`${API_BASE}/api/files/${encodeURIComponent(fileId)}`, { 
-        method: 'DELETE' 
-      });
+      const response = await fetch(
+        `${API_BASE}/api/files/${encodeURIComponent(fileId)}`, 
+        { 
+          method: 'DELETE',
+          headers: getAuthHeaders() // ADDED: Include auth headers
+        }
+      );
       
       if (!response.ok) {
+        if (response.status === 401) {
+          setError('Authentication required. Please login again.');
+          return;
+        }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
@@ -101,6 +153,18 @@ const S3FileManager = () => {
     const truncated = nameWithoutExt.slice(0, maxLength - ext.length - 4) + '...';
     return truncated + '.' + ext;
   };
+
+  /* ADDED: Check if authenticated
+  if (!authToken) {
+    return (
+      <div className="file-manager">
+        <div className="empty-state">
+          <p>⚠️ Please login first to manage files.</p>
+        </div>
+      </div>
+    );
+  }
+*/
 
   return (
     <div className="file-manager">

@@ -1,3 +1,4 @@
+//Chatbot.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useApp } from '../contexts/AppContext';
@@ -11,15 +12,35 @@ export default function Chatbot({ conversationId }) {
   const [darkMode, setDarkMode] = useState(true);
   const scrollRef = useRef(null);
 
-  // Access shared state if needed
+  // Access shared state - IMPORTANT: Get auth token from context
   const { state } = useApp();
 
   const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
 
-  // ✅ Load chat history
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    if (!state.authToken) {
+      console.warn('No auth token available');
+      return { 'Content-Type': 'application/json' };
+    }
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${state.authToken}`
+    };
+  };
+
+  // ✅ Load chat history with auth headers
   const loadChatHistory = async (conversation) => {
     try {
-      const res = await fetch(`${API_BASE}/chat-history?conversation=${conversation}`);
+      const res = await fetch(`${API_BASE}/chat-history?conversation=${conversation}`, {
+        headers: getAuthHeaders() // ADDED: Include auth headers
+      });
+      
+      if (!res.ok) {
+        console.error(`Failed to load chat history: ${res.status}`);
+        return;
+      }
+      
       const data = await res.json();
       if (data?.history) {
         // Add unique IDs to loaded messages
@@ -34,7 +55,7 @@ export default function Chatbot({ conversationId }) {
     }
   };
 
-  // ✅ Initialize conversation and theme - UPDATED for new architecture
+  // ✅ Initialize conversation and theme
   useEffect(() => {
     const init = async () => {
       let conversation = 'default';
@@ -49,14 +70,18 @@ export default function Chatbot({ conversationId }) {
       }
       
       setCurrentconversation(conversation);
-      loadChatHistory(conversation);
+      
+      // Only load history if we have auth token
+      if (state.authToken) {
+        loadChatHistory(conversation);
+      }
 
       // Load theme preference - use in-memory storage instead of localStorage
       const savedMode = sessionStorage.getItem('chatbot-dark-mode');
       if (savedMode !== null) setDarkMode(savedMode === 'true');
     };
     init();
-  }, [conversationId]); // Re-run when conversationId prop changes
+  }, [conversationId, state.authToken]); // Re-run when auth token changes
 
   // ✅ Scroll to bottom on new messages
   useEffect(() => {
@@ -66,14 +91,13 @@ export default function Chatbot({ conversationId }) {
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
-    // Use sessionStorage instead of localStorage for better compatibility
     sessionStorage.setItem('chatbot-dark-mode', newMode.toString());
   };
 
-  // ✅ Send message with proper state management
+  // ✅ Send message with auth headers
   const sendMessage = async () => {
     const trimmed = input.trim();
-    if (!trimmed || loading) return; // Prevent multiple submissions
+    if (!trimmed || loading) return;
 
     const userMessage = { 
       role: 'user', 
@@ -89,9 +113,14 @@ export default function Chatbot({ conversationId }) {
     try {
       const res = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(), // CHANGED: Use auth headers
         body: JSON.stringify({ message: trimmed, conversation: currentconversation }),
       });
+
+      if (!res.ok) {
+        console.error(`Chat request failed: ${res.status}`);
+        throw new Error(`Chat request failed: ${res.status}`);
+      }
 
       const data = await res.json();
       const reply = data?.reply || "Sorry, I didn't understand that.";
@@ -102,7 +131,6 @@ export default function Chatbot({ conversationId }) {
         id: `assistant-${Date.now()}`
       };
 
-      // Add assistant response using functional update
       setMessages(prev => [...prev, assistantMessage]);
 
     } catch (err) {
@@ -125,7 +153,7 @@ export default function Chatbot({ conversationId }) {
     }
   };
 
-  // ✅ Upload handler with proper state management and correct endpoint
+  // ✅ Upload handler with auth headers
   const handleFileUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -141,17 +169,20 @@ export default function Chatbot({ conversationId }) {
     const uploadedFiles = [];
     const failedFiles = [];
 
-    // Process files one by one (your endpoint expects single file)
+    // Process files one by one
     for (const file of files) {
       const formData = new FormData();
       formData.append('conversation_id', currentconversation);
-      formData.append('file', file); // Single file as expected
+      formData.append('file', file);
 
       try {
         console.log(`📦 Uploading ${file.name} to backend...`);
         
         const res = await fetch(`${API_BASE}/upload-and-index`, {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${state.authToken}` // ADDED: Auth header for file upload
+          },
           body: formData
         });
 
@@ -201,13 +232,28 @@ export default function Chatbot({ conversationId }) {
     e.target.value = null;
   };
 
+  /* Check if authenticated
+  if (!state.authToken) {
+    return (
+      <div className={`chatbot-container ${darkMode ? 'dark' : 'light'}`}>
+        <div className="chatbot-messages">
+          <div className="message-row assistant">
+            <div className="message-bubble">
+              ⚠️ Please login first to use the chatbot.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+*/
+
   return (
     <div className={`chatbot-container ${darkMode ? 'dark' : 'light'}`}>
       {/* Header */}
       <div className="chatbot-header">
         <div className="chatbot-title">
           Private.ly
-          {/* Show current conversation in title */}
           <span className="conversation-indicator">
             {currentconversation !== 'default' ? ` - ${currentconversation.replace(/_/g, ' ')}` : ''}
           </span>
@@ -246,7 +292,7 @@ export default function Chatbot({ conversationId }) {
           <input
             type="file"
             onChange={handleFileUpload}
-            accept = ".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.json,.png,.jpeg,.jpg,.heic" // File types
+            accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.json,.png,.jpeg,.jpg,.heic"
             multiple
             className="chatbot-file-hidden"
           />

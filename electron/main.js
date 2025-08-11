@@ -32,8 +32,8 @@ function saveconversationsToDisk() {
 // CREATE WINDOWS WITH DIFFERENT ROUTES - KEY CHANGE
 function createMainWindow() {
   mainWindow = new BrowserWindow({
-    width: 520,
-    height: 70,
+    width: 900,  // Start larger for auth screen
+    height: 600, // Start larger for auth screen
     frame: false,
     transparent: true,
     resizable: false,
@@ -47,6 +47,17 @@ function createMainWindow() {
   mainWindow.loadURL('http://localhost:5173/?window=main');
 }
 
+// Add handler to resize window after auth success
+ipcMain.on('auth-success', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    // Add a small delay to ensure the DOM has updated
+    setTimeout(() => {
+      mainWindow.setSize(520, 70);
+      mainWindow.center();
+    }, 100);
+  }
+});
+
 function createOrToggleChatbotWindow(conversation) {
   if (chatbotWindow && !chatbotWindow.isDestroyed()) {
     if (chatbotWindow.isVisible()) {
@@ -58,7 +69,7 @@ function createOrToggleChatbotWindow(conversation) {
   } else {
     chatbotWindow = new BrowserWindow({
       width: 400,
-      height: 300,
+      height: 300,  // Changed from 300 to 600
       minWidth: 400,
       minHeight: 300,
       frame: false,

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { AppProvider } from './contexts/AppContext';
-import FloatingBar from './components/FloatingBar';  // Your existing component
-import Chatbot from './components/Chatbot';          // Your existing component
+import { AppProvider, useApp } from './contexts/AppContext';
+import AuthScreen from './components/AuthScreen';
+import FloatingBar from './components/FloatingBar';
+import Chatbot from './components/Chatbot';
 import ConversationManager from './components/ConversationManager';
 import FileManagerComponent from './components/FileManager';
 import './App.css';
 import './styling/floatingbar.css';
 
 function AppContent() {
+  const { state, api } = useApp();
   const [windowType, setWindowType] = useState('main');
   const [conversationId, setConversationId] = useState('default');
 
@@ -30,13 +32,18 @@ function AppContent() {
     document.title = titles[window_type] || 'App';
   }, []);
 
+  // Only show auth screen for main window
+  if (!state.isAuthenticated && windowType === 'main') {
+    return <AuthScreen />;
+  }
+
   // Render appropriate component based on window type
   const renderComponent = () => {
     switch (windowType) {
       case 'main':
-        return <FloatingBar />;  // Your existing FloatingBar component
+        return <FloatingBar />;
       case 'chatbot':
-        return <Chatbot conversationId={conversationId} />;  // Your existing Chatbot component
+        return <Chatbot conversationId={conversationId} />;
       case 'conversation-manager':
         return <ConversationManager />;
       case 'file-manager':
@@ -62,5 +69,3 @@ function App() {
 }
 
 export default App;
-
-

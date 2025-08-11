@@ -23,6 +23,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return new Promise(resolve => {
       ipcRenderer.once('set-conversation', (_, conversation) => resolve(conversation));
     });
+  },
+  
+  // Add this generic send method for auth-success
+  send: (channel, data) => {
+    if (channel === 'auth-success') {
+      ipcRenderer.send(channel, data);
+    }
   }
 });
 

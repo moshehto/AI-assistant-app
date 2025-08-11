@@ -1,5 +1,6 @@
-//uploadfile.jsx
+//UploadFile.jsx
 import React from 'react';
+import { useApp } from '../contexts/AppContext'; // ADDED: Import useApp to get auth token
 
 export default function UploadFile({ 
   currentConversation = "default", 
@@ -13,6 +14,10 @@ export default function UploadFile({
   ...otherProps
 }) {
   const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
+  
+  // ADDED: Get auth token from context
+  const { state } = useApp();
+  const { authToken } = state;
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -22,6 +27,12 @@ export default function UploadFile({
   };
 
   const handleUpload = () => {
+    // ADDED: Check if authenticated
+    if (!authToken) {
+      alert('⚠️ Please login first to upload files.');
+      return;
+    }
+
     const input = document.createElement('input');
     input.type = 'file';
     input.multiple = true;
@@ -52,6 +63,9 @@ export default function UploadFile({
         try {
           const res = await fetch(`${API_BASE}/upload-and-index`, {
             method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${authToken}` // ADDED: Include auth header
+            },
             body: formData,
           });
 
@@ -59,12 +73,21 @@ export default function UploadFile({
             const data = await res.json();
             uploadedFiles.push(data.filename || file.name);
           } else {
+            if (res.status === 401) {
+              throw new Error('Authentication required. Please login again.');
+            }
             throw new Error(`Upload failed: ${res.status}`);
           }
 
         } catch (err) {
           console.error(`❌ Upload error for ${file.name}:`, err);
           failedFiles.push(file.name);
+          
+          // ADDED: Special handling for auth errors
+          if (err.message.includes('Authentication')) {
+            alert('⚠️ ' + err.message);
+            break; // Stop processing more files if auth failed
+          }
         }
       }
 
@@ -112,7 +135,7 @@ export default function UploadFile({
       onClick={handleUpload}
       onKeyDown={handleKeyPress}
       style={style}
-      disabled={disabled}
+      disabled={disabled || !authToken} // ADDED: Disable if not authenticated
       {...otherProps}
     >
       {children || '📎'}

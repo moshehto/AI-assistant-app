@@ -1,3 +1,4 @@
+//ConversationManager.jsx
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import '../styling/conversationmanager.css';
@@ -9,13 +10,26 @@ export default function ConversationManager({ onClose }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [deletingConversations, setDeletingConversations] = useState(new Set());
 
-  // Use shared state and API
-  const { conversations, loading, error } = state;
+  // Use shared state and API - GET AUTH TOKEN
+  const { conversations, loading, error, authToken } = state; // ADDED: Get authToken
+
+  // ADDED: Helper function to get auth headers
+  const getAuthHeaders = () => {
+    if (!authToken) {
+      console.warn('No auth token available');
+      return {};
+    }
+    return {
+      'Authorization': `Bearer ${authToken}`
+    };
+  };
 
   // Fetch conversations on mount using shared API
   useEffect(() => {
-    api.fetchConversations();
-  }, []);
+    if (authToken) { // ADDED: Only fetch if authenticated
+      api.fetchConversations();
+    }
+  }, [authToken]); // ADDED: authToken as dependency
 
   // Update local conversations when shared state changes
   useEffect(() => {
@@ -84,7 +98,13 @@ export default function ConversationManager({ onClose }) {
     try {
       const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
       // Get all files for default conversation and delete them
-      const filesResponse = await fetch(`${API_BASE}/api/files?conversation=default`);
+      const filesResponse = await fetch(
+        `${API_BASE}/api/files?conversation=default`,
+        {
+          headers: getAuthHeaders() // ADDED: Include auth headers
+        }
+      );
+      
       if (filesResponse.ok) {
         const filesData = await filesResponse.json();
         const files = filesData.files || [];
@@ -92,9 +112,13 @@ export default function ConversationManager({ onClose }) {
         // Delete each file
         for (const file of files) {
           try {
-            await fetch(`${API_BASE}/api/files/${encodeURIComponent(file.id)}`, {
-              method: 'DELETE'
-            });
+            await fetch(
+              `${API_BASE}/api/files/${encodeURIComponent(file.id)}`,
+              {
+                method: 'DELETE',
+                headers: getAuthHeaders() // ADDED: Include auth headers
+              }
+            );
           } catch (fileErr) {
             console.error(`Failed to delete file ${file.name}:`, fileErr);
           }
@@ -123,6 +147,20 @@ export default function ConversationManager({ onClose }) {
   const getConversationIcon = (type) => {
     return type === 'default' ? '🗂️' : '🗂️';
   };
+
+  /* ADDED: Check if authenticated
+  if (!authToken) {
+    return (
+      <div className="conversation-manager">
+        <div className="content">
+          <div className="empty-state">
+            <p>⚠️ Please login first to manage conversations.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  */
 
   return (
     <div className="conversation-manager">
