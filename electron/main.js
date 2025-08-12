@@ -55,7 +55,6 @@ ipcMain.on('auth-success', () => {
     // Add a small delay to ensure the DOM has updated
     setTimeout(() => {
       mainWindow.setSize(520, 70);
-      mainWindow.center();
     }, 100);
   }
 });
