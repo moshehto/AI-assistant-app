@@ -5,6 +5,7 @@ import FloatingBar from './components/FloatingBar';
 import Chatbot from './components/Chatbot';
 import ConversationManager from './components/ConversationManager';
 import FileManagerComponent from './components/FileManager';
+import AdminDashboard from './components/AdminDashboard';
 import './App.css';
 import './styling/floatingbar.css';
 
@@ -27,7 +28,8 @@ function AppContent() {
       'main': 'Main Window',
       'chatbot': 'Chatbot',
       'conversation-manager': 'Conversation Manager',
-      'file-manager': 'File Manager'
+      'file-manager': 'File Manager',
+      'admin-dashboard': 'Admin Dashboard'
     };
     document.title = titles[window_type] || 'App';
   }, []);
@@ -48,6 +50,8 @@ function AppContent() {
         return <ConversationManager />;
       case 'file-manager':
         return <FileManagerComponent />;
+      case 'admin-dashboard':
+        return <AdminDashboard />;
       default:
         return <FloatingBar />;
     }

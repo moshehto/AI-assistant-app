@@ -96,7 +96,20 @@ export default function FloatingBar() {
         ))}
       </select>
 
-      <button className="bar-btn" title="Start">🎙️</button>
+        {/* Admin Dashboard Button - Only show for admin users */}
+        {state.userData?.role === 'admin' && (
+          <button 
+            className="bar-btn" 
+            title="Admin Dashboard"
+            onClick={() => {
+              if (window.electronAPI?.openAdminDashboardWindow) {
+                window.electronAPI.openAdminDashboardWindow();
+              }
+            }}
+          >
+            👥
+          </button>
+        )}
       <button className="bar-btn" title="List Files" onClick={() => window.electronAPI?.openFileManagerWindow?.(selectedConversation)}>📁</button>
       
       <UploadFile 

@@ -7,6 +7,8 @@ let chatbotWindow;
 let conversationManagerWindow;
 let fileManagerWindow;
 let conversationList = ['default'];
+let adminDashboardWindow;
+
 
 const conversationS_FILE = path.join(__dirname, 'conversations.json');
 
@@ -139,6 +141,33 @@ function createFileManagerWindow() {
   });
 }
 
+function createAdminDashboardWindow() {
+  if (adminDashboardWindow && !adminDashboardWindow.isDestroyed()) {
+    adminDashboardWindow.focus();
+    return;
+  }
+
+  adminDashboardWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    frame: true,  // Regular window frame for admin dashboard
+    transparent: false,
+    resizable: true,
+    alwaysOnTop: false,  // Don't need always on top for admin dashboard
+    title: 'Admin Dashboard',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js')
+    }
+  });
+  
+  // Same app, different route
+  adminDashboardWindow.loadURL('http://localhost:5173/?window=admin-dashboard');
+  
+  adminDashboardWindow.on('closed', () => {
+    adminDashboardWindow = null;
+  });
+}
+
 // IPC handlers (unchanged)
 ipcMain.on('new-conversation', (event, conversationName) => {
   const conversationValue = conversationName.toLowerCase().replace(/\s+/g, '_');
@@ -165,6 +194,9 @@ ipcMain.on('open-chatbot-window', (event, conversation) => {
 
 ipcMain.on('conversation-manager-window', createConversationManagerWindow);
 ipcMain.on('file-manager-window', createFileManagerWindow);
+
+ipcMain.on('admin-dashboard-window', createAdminDashboardWindow);
+
 
 ipcMain.on('minimize-window', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);

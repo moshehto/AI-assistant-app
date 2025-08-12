@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   getconversationList: () => ipcRenderer.invoke('get-conversation-list'),
 
+  openAdminDashboardWindow: () => ipcRenderer.send('admin-dashboard-window'),
+
+
   getInitialconversation: () => {
     ipcRenderer.send('get-initial-conversation');
     return new Promise(resolve => {
