@@ -10,7 +10,7 @@ import './App.css';
 import './styling/floatingbar.css';
 
 function AppContent() {
-  const { state, api } = useApp();
+  const { state } = useApp();
   const [windowType, setWindowType] = useState('main');
   const [conversationId, setConversationId] = useState('default');
 

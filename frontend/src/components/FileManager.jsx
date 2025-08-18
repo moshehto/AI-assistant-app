@@ -13,28 +13,14 @@ const S3FileManager = () => {
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
-  // Access shared state and API - GET AUTH TOKEN
+  // Access shared state and API
   const { state, api } = useApp();
-  const { conversations, authToken } = state; // ADDED: Get authToken from state
-
-  // API Base URL - Render hosted backend
-  const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
-
-  // ADDED: Helper function to get auth headers
-  const getAuthHeaders = () => {
-    if (!authToken) {
-      console.warn('No auth token available');
-      return {};
-    }
-    return {
-      'Authorization': `Bearer ${authToken}`
-    };
-  };
+  const { conversations } = state;
 
   useEffect(() => {
     // Fetch conversations on mount using shared API
     const loadConversations = async () => {
-      if (authToken) {
+      if (state.authToken) {
         await api.fetchConversations();
         
         // Force a re-fetch after a short delay if no conversations
@@ -47,7 +33,7 @@ const S3FileManager = () => {
       }
     };
     loadConversations();
-  }, [authToken]);
+  }, [state.authToken]);
 
   // Update local conversations when shared state changes
   useEffect(() => {
@@ -63,32 +49,22 @@ const S3FileManager = () => {
   }, [conversations]);
 
   useEffect(() => {
-    if (selectedconversation && authToken) { // ADDED: Check for authToken
+    if (selectedconversation && state.authToken) {
       loadFiles();
     }
-  }, [selectedconversation, authToken]); // ADDED: authToken as dependency
+  }, [selectedconversation, state.authToken]);
 
   const loadFiles = async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(
-        `${API_BASE}/api/files?conversation=${encodeURIComponent(selectedconversation)}`,
-        {
-          headers: getAuthHeaders() // ADDED: Include auth headers
-        }
-      );
+      const result = await api.fetchFiles(selectedconversation);
       
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Authentication required. Please login again.');
-          return;
-        }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (result.success) {
+        setFiles(result.files || []);
+      } else {
+        setError(result.error || 'Failed to load files');
       }
-      
-      const data = await response.json();
-      setFiles(data.files || []);
     } catch (err) {
       setError('Failed to load files');
       console.error('Error loading files:', err);
@@ -100,24 +76,14 @@ const S3FileManager = () => {
   const handleDeleteFile = async (fileId) => {
     setDeletingFiles(prev => new Set([...prev, fileId]));
     try {
-      const response = await fetch(
-        `${API_BASE}/api/files/${encodeURIComponent(fileId)}`, 
-        { 
-          method: 'DELETE',
-          headers: getAuthHeaders() // ADDED: Include auth headers
-        }
-      );
+      const result = await api.deleteFile(fileId);
       
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Authentication required. Please login again.');
-          return;
-        }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (result.success) {
+        setFiles(prev => prev.filter(file => file.id !== fileId));
+        setShowDeleteConfirm(null);
+      } else {
+        setError(result.error || 'Failed to delete file');
       }
-      
-      setFiles(prev => prev.filter(file => file.id !== fileId));
-      setShowDeleteConfirm(null);
     } catch (err) {
       setError('Failed to delete file');
       console.error('Error deleting file:', err);

@@ -294,6 +294,30 @@ export function AppProvider({ children }) {
         dispatch({ type: 'SET_ERROR', payload: error.message });
         return { success: false, error: error.message };
       }
+    },
+
+    async deleteFile(fileId) {
+      if (!state.authToken) {
+        console.warn('No auth token available');
+        return { success: false, error: 'Authentication required' };
+      }
+
+      try {
+        const response = await fetch(`https://chatbot-backend-fwl6.onrender.com/api/files/${encodeURIComponent(fileId)}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        
+        if (response.ok) {
+          return { success: true };
+        }
+        
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to delete file');
+      } catch (error) {
+        dispatch({ type: 'SET_ERROR', payload: error.message });
+        return { success: false, error: error.message };
+      }
     }
   };
 
