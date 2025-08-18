@@ -77,7 +77,7 @@ export function AppProvider({ children }) {
       if (storedToken && storedUser) {
         try {
           // Verify token is still valid
-          const response = await fetch('https://chatbot-backend-fwl6.onrender.com/auth/me', {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/auth/me`, {
             headers: {
               'Authorization': `Bearer ${storedToken}`
             }
@@ -129,7 +129,7 @@ export function AppProvider({ children }) {
     async login(email, password) {
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
-        const response = await fetch('https://chatbot-backend-fwl6.onrender.com/auth/login', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
@@ -142,7 +142,7 @@ export function AppProvider({ children }) {
         }
 
         // Get user profile
-        const profileResponse = await fetch('https://chatbot-backend-fwl6.onrender.com/auth/me', {
+        const profileResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/auth/me`, {
           headers: {
             'Authorization': `Bearer ${data.access_token}`
           }
@@ -203,7 +203,7 @@ export function AppProvider({ children }) {
 
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
-        const response = await fetch('https://chatbot-backend-fwl6.onrender.com/api/conversations', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/conversations`, {
           headers: getAuthHeaders()
         });
         
@@ -227,7 +227,7 @@ export function AppProvider({ children }) {
       }
 
       try {
-        const response = await fetch('https://chatbot-backend-fwl6.onrender.com/api/conversations', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/conversations`, {
           method: 'POST',
           headers: getAuthHeaders(),
           body: JSON.stringify({ name })
@@ -253,7 +253,7 @@ export function AppProvider({ children }) {
       }
 
       try {
-        const response = await fetch(`https://chatbot-backend-fwl6.onrender.com/api/conversations/${encodeURIComponent(conversationValue)}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/conversations/${encodeURIComponent(conversationValue)}`, {
           method: 'DELETE',
           headers: getAuthHeaders()
         });
@@ -279,7 +279,7 @@ export function AppProvider({ children }) {
       }
 
       try {
-        const response = await fetch(`https://chatbot-backend-fwl6.onrender.com/api/files?conversation=${encodeURIComponent(conversation)}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/files?conversation=${encodeURIComponent(conversation)}`, {
           headers: getAuthHeaders()
         });
         
@@ -303,7 +303,7 @@ export function AppProvider({ children }) {
       }
 
       try {
-        const response = await fetch(`https://chatbot-backend-fwl6.onrender.com/api/files/${encodeURIComponent(fileId)}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/files/${encodeURIComponent(fileId)}`, {
           method: 'DELETE',
           headers: getAuthHeaders()
         });

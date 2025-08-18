@@ -13,7 +13,7 @@ const AdminDashboard = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [deletingFileId, setDeletingFileId] = useState(null);
 
-  const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com';
   const categories = ['All', 'Policies', 'Templates', 'Resources', 'Training', 'Other'];
 
   // Get auth token from localStorage

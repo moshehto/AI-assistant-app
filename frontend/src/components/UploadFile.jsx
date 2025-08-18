@@ -13,7 +13,7 @@ export default function UploadFile({
   acceptedFiles = ".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.json,.png,.jpeg,.jpg,.heic",
   ...otherProps
 }) {
-  const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com';
   
   // ADDED: Get auth token from context
   const { state } = useApp();

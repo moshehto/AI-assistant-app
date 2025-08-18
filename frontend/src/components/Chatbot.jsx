@@ -15,7 +15,7 @@ export default function Chatbot({ conversationId }) {
   // Access shared state - IMPORTANT: Get auth token from context
   const { state } = useApp();
 
-  const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com';
 
   // Helper function to get auth headers
   const getAuthHeaders = () => {

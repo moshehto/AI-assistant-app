@@ -96,7 +96,7 @@ export default function ConversationManager({ onClose }) {
     setDeletingConversations(prev => new Set([...prev, 'default']));
 
     try {
-      const API_BASE = 'https://chatbot-backend-fwl6.onrender.com';
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com';
       // Get all files for default conversation and delete them
       const filesResponse = await fetch(
         `${API_BASE}/api/files?conversation=default`,
