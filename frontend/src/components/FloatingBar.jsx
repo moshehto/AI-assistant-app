@@ -30,6 +30,23 @@ export default function FloatingBar() {
     return () => window.removeEventListener('focus', handleFocus);
   }, [state.isAuthenticated]);
 
+  // Listen for conversation changes from other windows
+  useEffect(() => {
+    const handleConversationChange = (conversationValue) => {
+      setSelectedConversation(conversationValue);
+    };
+
+    if (window.electronAPI?.onConversationChanged) {
+      window.electronAPI.onConversationChanged(handleConversationChange);
+    }
+
+    return () => {
+      if (window.electronAPI?.removeConversationChangedListener) {
+        window.electronAPI.removeConversationChangedListener(handleConversationChange);
+      }
+    };
+  }, []);
+
   const loadConversations = async () => {
     await api.fetchConversations();
     
@@ -59,13 +76,16 @@ export default function FloatingBar() {
     }
   }, [state.conversations]);
 
-  const handleConversationChange = (e) => {
-    const selected = e.target.value;
-    if (selected === 'manage_conversations') {
-      window.electronAPI?.openconversationManagerWindow?.();
-    } else {
-      setSelectedConversation(selected);
+  const handleManageConversations = () => {
+    window.electronAPI?.openconversationManagerWindow?.();
+  };
+
+  const getCurrentConversationName = () => {
+    const current = conversations.find(conv => conv.value === selectedConversation);
+    if (current) {
+      return current.label.replace(/^[\u{1F5C2}\u{1F195}]\s*/u, '').replace('Default conversation', 'Default');
     }
+    return 'Default';
   };
 
   const handleUploadComplete = (message) => {
@@ -83,18 +103,18 @@ export default function FloatingBar() {
       
 
       
-      <select
-        className="conversation-dropdown"
-        value={selectedConversation}
-        onChange={handleConversationChange}
-        title="Choose conversation Context"
+      <div 
+        className="conversation-display clickable"
+        onClick={handleManageConversations}
+        title="Click to manage conversations"
       >
-        {conversations.map((conversation, index) => (
-          <option key={index} value={conversation.value}>
-            {conversation.label}
-          </option>
-        ))}
-      </select>
+        <span className="conversation-icon">
+          {conversations.find(conv => conv.value === selectedConversation)?.label.includes('Default') ? '🗂️' : '🆕'}
+        </span>
+        <span className="conversation-name">
+          {getCurrentConversationName()}
+        </span>
+      </div>
 
         {/* Admin Dashboard Button - Only show for admin users */}
         {state.userData?.role === 'admin' && (
@@ -112,12 +132,7 @@ export default function FloatingBar() {
         )}
       <button className="bar-btn" title="List Files" onClick={() => window.electronAPI?.openFileManagerWindow?.(selectedConversation)}>📁</button>
       
-      <UploadFile 
-        currentConversation={selectedConversation}  // FIXED: Changed from currentconversation to currentConversation
-        onUploadComplete={handleUploadComplete}
-        className="bar-btn"
-        title="Upload File"
-      />
+
       
       <button className="bar-btn" title="Chatbot" onClick={() => window.electronAPI?.openChatbotWindow?.(selectedConversation)}>🧠</button>
       

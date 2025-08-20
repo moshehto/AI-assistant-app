@@ -12,7 +12,7 @@ export default function ConversationManager() {
   const [deletingConversations, setDeletingConversations] = useState(new Set());
 
   // Use shared state and API - GET AUTH TOKEN
-  const { conversations, loading, error, authToken } = state; // ADDED: Get authToken
+  const { conversations, loading, error, authToken, currentConversation } = state; // ADDED: Get authToken and currentConversation
 
   // ADDED: Helper function to get auth headers
   const getAuthHeaders = () => {
@@ -145,6 +145,18 @@ export default function ConversationManager() {
     }
   };
 
+  const handleSelectConversation = (conversationValue) => {
+    // Send message to Electron main process to update conversation in floating bar
+    if (window.electronAPI?.setCurrentConversation) {
+      window.electronAPI.setCurrentConversation(conversationValue);
+    }
+    
+    // Close the conversation manager window
+    if (window.electronAPI?.closeWindow) {
+      window.electronAPI.closeWindow();
+    }
+  };
+
   const getConversationIcon = (type) => {
     return type === 'default' ? <Folder className="conversation-type-icon" /> : <MessageCircle className="conversation-type-icon" />;
   };
@@ -243,19 +255,31 @@ export default function ConversationManager() {
                 <div className="private-conversation-name" title={conversation.label}>
                   {conversation.label}
                 </div>
-                <button
-                  className="private-delete-button"
-                  onClick={() => setShowDeleteConfirm(conversation.value)}
-                  disabled={deletingConversations.has(conversation.value)}
-                  title={conversation.value === 'default' ? 'Clear default conversation files' : 'Delete conversation and all files'}
-                >
-                  {deletingConversations.has(conversation.value) ? (
-                    <RefreshCw size={14} className="spinning" />
-                  ) : (
-                    <Trash2 size={14} />
-                  )}
-                  {conversation.value === 'default' ? 'Clear' : 'Delete'}
-                </button>
+                <div className="private-conversation-actions">
+                  <button
+                    className={`private-select-button ${
+                      conversation.value === currentConversation ? 'current-conversation' : ''
+                    }`}
+                    onClick={() => handleSelectConversation(conversation.value)}
+                    disabled={conversation.value === currentConversation}
+                    title={conversation.value === currentConversation ? 'Currently selected conversation' : 'Select this conversation'}
+                  >
+                    {conversation.value === currentConversation ? 'Selected' : 'Select'}
+                  </button>
+                  <button
+                    className="private-delete-button"
+                    onClick={() => setShowDeleteConfirm(conversation.value)}
+                    disabled={deletingConversations.has(conversation.value)}
+                    title={conversation.value === 'default' ? 'Clear default conversation files' : 'Delete conversation and all files'}
+                  >
+                    {deletingConversations.has(conversation.value) ? (
+                      <RefreshCw size={14} className="spinning" />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
+                    {conversation.value === 'default' ? 'Clear' : 'Delete'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

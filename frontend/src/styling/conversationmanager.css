@@ -3,8 +3,30 @@
   background-color: #1a1a1a;
   color: #e0e0e0;
   min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar */
+.private-conversation-manager::-webkit-scrollbar {
+  width: 8px;
+}
+
+.private-conversation-manager::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.private-conversation-manager::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.private-conversation-manager::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Header */
@@ -132,6 +154,27 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.private-conversations-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.private-conversations-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.private-conversations-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.private-conversations-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .private-conversation-card {
@@ -191,6 +234,42 @@
   margin-bottom: 8px;
 }
 
+.private-conversation-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.private-select-button {
+  background-color: #4a90e2;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  transition: background 0.2s;
+}
+
+.private-select-button:hover:not(:disabled) {
+  background-color: #3a7bc8;
+}
+
+.private-select-button.current-conversation {
+  background-color: #87ceeb;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.private-select-button.current-conversation:hover {
+  background-color: #87ceeb;
+}
+
 .private-delete-button {
   background-color: #ff4444;
   color: #fff;
@@ -204,6 +283,7 @@
   justify-content: center;
   gap: 6px;
   transition: background 0.2s;
+  flex: 1;
 }
 
 .private-delete-button:hover:not(:disabled) {

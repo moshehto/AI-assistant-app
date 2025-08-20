@@ -14,15 +14,40 @@
     -webkit-app-region: drag;
   }
 
-  .conversation-dropdown {
-    margin-right: 8px;
-    padding: 4px 6px;
+  .conversation-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: white;
     font-size: 14px;
-    border-radius: 6px;
-    background-color: #f8f8f8;
-    border: 1px solid #ccc;
+    min-width: 0;
+    max-width: 200px;
     -webkit-app-region: no-drag;
+  }
 
+  .conversation-display.clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .conversation-display.clickable:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.02);
+  }
+
+  .conversation-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .conversation-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
   }
   
   

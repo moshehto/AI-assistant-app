@@ -54,7 +54,7 @@ ipcMain.on('auth-success', () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     // Add a small delay to ensure the DOM has updated
     setTimeout(() => {
-      mainWindow.setSize(520, 70);
+      mainWindow.setSize(400, 70);
     }, 100);
   }
 });
@@ -196,6 +196,20 @@ ipcMain.on('file-manager-window', createFileManagerWindow);
 
 ipcMain.on('admin-dashboard-window', createAdminDashboardWindow);
 
+
+ipcMain.on('set-current-conversation', (event, conversationValue) => {
+  // Send message to main window to update current conversation
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('conversation-changed', conversationValue);
+  }
+});
+
+ipcMain.on('close-window', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win && win !== mainWindow) {
+    win.close();
+  }
+});
 
 ipcMain.on('minimize-window', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);

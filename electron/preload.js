@@ -20,6 +20,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   openAdminDashboardWindow: () => ipcRenderer.send('admin-dashboard-window'),
 
+  setCurrentConversation: (conversationValue) => ipcRenderer.send('set-current-conversation', conversationValue),
+  closeWindow: () => ipcRenderer.send('close-window'),
+  
+  onConversationChanged: (callback) => ipcRenderer.on('conversation-changed', (_, conversationValue) => callback(conversationValue)),
+  removeConversationChangedListener: (callback) => ipcRenderer.removeListener('conversation-changed', callback),
 
   getInitialconversation: () => {
     ipcRenderer.send('get-initial-conversation');
