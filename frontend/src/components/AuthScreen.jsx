@@ -1,5 +1,6 @@
 //AuthScreen.jsx
 import React, { useState } from 'react';
+import { AlertTriangle, CheckCircle, Loader, Eye, EyeOff, Shield } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import '../styling/authscreen.css';
 
@@ -8,6 +9,8 @@ export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -117,44 +120,36 @@ export default function AuthScreen() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-background">
-        <div className="auth-decoration">
-          <div className="floating-orb orb-1"></div>
-          <div className="floating-orb orb-2"></div>
-          <div className="floating-orb orb-3"></div>
-        </div>
-      </div>
-      
-      <div className="auth-content">
-        <div className="auth-card">
-          <div className="auth-header">
-            <div className="auth-logo">
-              <div className="logo-icon">🤖</div>
-              <h1>AI Assistant</h1>
+    <div className="private-auth-container">
+      <div className="private-auth-content">
+        <div className="private-auth-card">
+          <div className="private-auth-header">
+            <div className="private-auth-logo">
+              <Shield size={32} className="private-logo-icon" />
+              <h1>Private.ly</h1>
             </div>
-            <p className="auth-subtitle">
-              {isLogin ? 'Welcome back! Sign in to continue.' : 'Create your account to get started.'}
+            <p className="private-auth-subtitle">
+              {isLogin ? 'Welcome back to your secure workspace' : 'Create your private account to get started'}
             </p>
           </div>
 
           {error && (
-            <div className="alert alert-error">
-              <span className="alert-icon">⚠️</span>
-              {error}
+            <div className="private-error-banner">
+              <AlertTriangle size={16} />
+              <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="alert alert-success">
-              <span className="alert-icon">✅</span>
-              {success}
+            <div className="private-success-banner">
+              <CheckCircle size={16} />
+              <span>{success}</span>
             </div>
           )}
 
-          <form onSubmit={isLogin ? handleLogin : handleSignup} className="auth-form">
+          <form onSubmit={isLogin ? handleLogin : handleSignup} className="private-auth-form">
             {!isLogin && (
-              <div className="form-group">
+              <div className="private-form-group">
                 <label htmlFor="fullName">Full Name</label>
                 <input
                   type="text"
@@ -165,11 +160,12 @@ export default function AuthScreen() {
                   required={!isLogin}
                   placeholder="Enter your full name"
                   disabled={state.loading}
+                  className="private-form-input"
                 />
               </div>
             )}
 
-            <div className="form-group">
+            <div className="private-form-group">
               <label htmlFor="email">Email Address</label>
               <input
                 type="email"
@@ -180,48 +176,71 @@ export default function AuthScreen() {
                 required
                 placeholder="Enter your email"
                 disabled={state.loading}
+                className="private-form-input"
               />
             </div>
 
-            <div className="form-group">
+            <div className="private-form-group">
               <label htmlFor="password">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required
-                placeholder={isLogin ? "Enter your password" : "Create a password (min 6 characters)"}
-                disabled={state.loading}
-                minLength={isLogin ? undefined : 6}
-              />
+              <div className="private-password-input">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                  placeholder={isLogin ? "Enter your password" : "Create a password (min 6 characters)"}
+                  disabled={state.loading}
+                  minLength={isLogin ? undefined : 6}
+                  className="private-form-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="private-password-toggle"
+                  disabled={state.loading}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
 
             {!isLogin && (
-              <div className="form-group">
+              <div className="private-form-group">
                 <label htmlFor="confirmPassword">Confirm Password</label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  required={!isLogin}
-                  placeholder="Confirm your password"
-                  disabled={state.loading}
-                />
+                <div className="private-password-input">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    required={!isLogin}
+                    placeholder="Confirm your password"
+                    disabled={state.loading}
+                    className="private-form-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="private-password-toggle"
+                    disabled={state.loading}
+                  >
+                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
             )}
 
             <button 
               type="submit" 
-              className={`auth-submit ${state.loading ? 'loading' : ''}`}
+              className="private-auth-submit"
               disabled={state.loading}
             >
               {state.loading ? (
                 <>
-                  <span className="loading-spinner"></span>
+                  <Loader size={16} className="spinning" />
                   {isLogin ? 'Signing in...' : 'Creating account...'}
                 </>
               ) : (
@@ -230,13 +249,13 @@ export default function AuthScreen() {
             </button>
           </form>
 
-          <div className="auth-footer">
+          <div className="private-auth-footer">
             <p>
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <button 
                 type="button" 
                 onClick={toggleMode}
-                className="auth-toggle"
+                className="private-auth-toggle"
                 disabled={state.loading}
               >
                 {isLogin ? 'Sign up' : 'Sign in'}
@@ -245,18 +264,21 @@ export default function AuthScreen() {
           </div>
         </div>
 
-        <div className="auth-info">
-          <div className="info-card">
-            <h3>🚀 Powerful AI Assistant</h3>
-            <p>Chat with your documents, get instant answers, and boost your productivity.</p>
+        <div className="private-auth-features">
+          <div className="private-feature-card">
+            <Shield size={24} className="private-feature-icon" />
+            <h3>Enterprise Security</h3>
+            <p>Military-grade encryption protects your sensitive data and conversations.</p>
           </div>
-          <div className="info-card">
-            <h3>🔒 Secure & Private</h3>
-            <p>Your data is encrypted and stored securely. We respect your privacy.</p>
+          <div className="private-feature-card">
+            <CheckCircle size={24} className="private-feature-icon" />
+            <h3>Private by Design</h3>
+            <p>Your documents and chats remain completely confidential and secure.</p>
           </div>
-          <div className="info-card">
-            <h3>👥 Team Collaboration</h3>
-            <p>Share knowledge with your team and collaborate on projects seamlessly.</p>
+          <div className="private-feature-card">
+            <Eye size={24} className="private-feature-icon" />
+            <h3>Full Control</h3>
+            <p>You own your data. Manage access, export, or delete anytime.</p>
           </div>
         </div>
       </div>
