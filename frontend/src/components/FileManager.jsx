@@ -1,6 +1,6 @@
 //FileManager.jsx
 import React, { useState, useEffect } from 'react';
-import { Trash2, RefreshCw, AlertTriangle, Check, X } from 'lucide-react';
+import { Trash2, RefreshCw, Check, X, FileText, File, Image, FileSpreadsheet, FileCode } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import '../styling/filemanager.css';
 
@@ -105,20 +105,15 @@ const S3FileManager = () => {
   };
 
   const getFileIcon = (type) => {
-    if (type.includes('pdf')) return '📄';
-    if (type.includes('powerpoint') || type.includes('presentation')) return '📊';
-    if (type.includes('excel') || type.includes('spreadsheet')) return '📈';
-    if (type.includes('word') || type.includes('document')) return '📝';
-    return '📄';
+    if (type.includes('pdf')) return <FileText className="file-type-icon" />;
+    if (type.includes('powerpoint') || type.includes('presentation')) return <FileText className="file-type-icon" />;
+    if (type.includes('excel') || type.includes('spreadsheet')) return <FileSpreadsheet className="file-type-icon" />;
+    if (type.includes('word') || type.includes('document')) return <FileText className="file-type-icon" />;
+    if (type.includes('image')) return <Image className="file-type-icon" />;
+    if (type.includes('code') || type.includes('javascript') || type.includes('python') || type.includes('json')) return <FileCode className="file-type-icon" />;
+    return <File className="file-type-icon" />;
   };
 
-  const truncateFilename = (name, maxLength = 18) => {
-    if (name.length <= maxLength) return name;
-    const ext = name.split('.').pop();
-    const nameWithoutExt = name.slice(0, name.lastIndexOf('.'));
-    const truncated = nameWithoutExt.slice(0, maxLength - ext.length - 4) + '...';
-    return truncated + '.' + ext;
-  };
 
   /* ADDED: Check if authenticated
   if (!authToken) {
@@ -133,148 +128,145 @@ const S3FileManager = () => {
 */
 
   return (
-    <div className="file-manager">
-      {/* Compact Header */}
-      <div className="header">
-        <div className="header-row">
-          <h1 className="title">File Manager</h1>
-          <button
-            onClick={loadFiles}
-            disabled={!selectedconversation || loading}
-            className={`refresh-btn ${(!selectedconversation || loading) ? 'disabled' : ''}`}
-          >
-            <RefreshCw className={`icon-sm ${loading ? 'spinning' : ''}`} />
-            Refresh
-          </button>
-        </div>
-        
-        <select
-          value={selectedconversation}
-          onChange={(e) => setSelectedconversation(e.target.value)}
-          className="conversation-select"
-        >
-          <option value="">Select a conversation...</option>
-          {localConversations.map((conversation) => (
-            <option key={conversation} value={conversation}>
-              {conversation === 'default' ? 'Default Conversation' : conversation.replace(/_/g, ' ')}
-            </option>
-          ))}
-        </select>
+    <div className="private-file-manager">
+      {/* Header */}
+      <div className="private-header">
+        <h1 className="private-title">Private.ly File Manager</h1>
+        <p className="private-subtitle">Manage your document files and embeddings</p>
       </div>
 
-      {/* Content */}
-      <div className="content">
+      {/* Controls */}
+      <div className="private-content">
+        <div className="private-section-header">
+          <h2 className="private-section-title">Files</h2>
+          <div className="private-file-controls">
+            <select
+              value={selectedconversation}
+              onChange={(e) => setSelectedconversation(e.target.value)}
+              className="private-conversation-filter"
+            >
+              <option value="">Select a conversation...</option>
+              {localConversations.map((conversation) => (
+                <option key={conversation} value={conversation}>
+                  {conversation === 'default' ? 'Default Conversation' : conversation.replace(/_/g, ' ')}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={loadFiles}
+              disabled={!selectedconversation || loading}
+              className="private-refresh-button"
+            >
+              <RefreshCw size={16} className={loading ? 'spinning' : ''} />
+            </button>
+          </div>
+        </div>
+
+        {/* Error Banner */}
         {error && (
-          <div className="error-alert">
-            <AlertTriangle className="icon-sm error-icon" />
-            <span className="error-text">{error}</span>
-            <button onClick={() => setError('')} className="error-close">
-              <X className="icon-sm" />
+          <div className="private-error-banner">
+            <span>{error}</span>
+            <button onClick={() => setError('')} className="private-error-close">
+              <X size={16} />
             </button>
           </div>
         )}
 
         {!selectedconversation ? (
-          <div className="empty-state">
+          <div className="private-empty-state">
+            <FileText size={48} className="private-empty-icon" />
             <p>Select a conversation to view files</p>
           </div>
         ) : loading ? (
-          <div className="loading-state">
-            <RefreshCw className="icon-md spinning" />
-            <p>Loading...</p>
+          <div className="private-loading">
+            <RefreshCw className="spinning" size={24} />
+            <p>Loading files...</p>
           </div>
         ) : files.length === 0 ? (
-          <div className="empty-state">
-            <p>No files found</p>
+          <div className="private-empty-state">
+            <FileText size={48} className="private-empty-icon" />
+            <p>No files found in this conversation</p>
           </div>
         ) : (
-          <div className="files-container">
-            <div className="files-content">
-              <div className="files-count">{files.length} files</div>
-              
-              <div className="files-list">
-                {files.map((file) => (
-                  <div key={file.id} className="file-card">
-                    <div className="file-content">
-                      <div className="file-header">
-                        <div className="file-info">
-                          <span className="file-icon">{getFileIcon(file.type)}</span>
-                          <div className="file-details">
-                            <div className="file-name" title={file.name}>
-                              {truncateFilename(file.name)}
-                            </div>
-                            <div className="file-size">
-                              {formatFileSize(file.size)}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <button
-                          onClick={() => setShowDeleteConfirm(file.id)}
-                          disabled={deletingFiles.has(file.id)}
-                          className={`delete-btn ${deletingFiles.has(file.id) ? 'disabled' : ''}`}
-                          title="Delete file"
-                        >
-                          {deletingFiles.has(file.id) ? (
-                            <RefreshCw className="icon-sm spinning" />
-                          ) : (
-                            <Trash2 className="icon-sm" />
-                          )}
-                        </button>
-                      </div>
-                      
-                      <div className="file-meta">
-                        <div className="meta-items">
-                          <div className="meta-item">
-                            {file.hasEmbeddings ? (
-                              <Check className="icon-sm check-icon" />
-                            ) : (
-                              <X className="icon-sm x-icon" />
-                            )}
-                            <span>Embeddings</span>
-                          </div>
-                          
-                          <div className="chunks-count">
-                            {file.chunkCount} chunks
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+          <div className="private-files-grid">
+            {files.map((file) => (
+              <div key={file.id} className="private-file-card">
+                <div className="private-file-header">
+                  {getFileIcon(file.type)}
+                  <div className="private-file-status">
+                    {file.hasEmbeddings ? (
+                      <span className="private-embeddings-badge">
+                        <Check size={12} /> Indexed
+                      </span>
+                    ) : (
+                      <span className="private-embeddings-badge no-embeddings">
+                        <X size={12} /> Not Indexed
+                      </span>
+                    )}
                   </div>
-                ))}
+                </div>
+                <div className="private-file-name" title={file.name}>
+                  {file.name}
+                </div>
+                <div className="private-file-metadata">
+                  <span>{formatFileSize(file.size)}</span>
+                  <span>•</span>
+                  <span>{file.chunkCount} chunks</span>
+                </div>
+                <button
+                  className="private-delete-button"
+                  onClick={() => setShowDeleteConfirm(file.id)}
+                  disabled={deletingFiles.has(file.id)}
+                >
+                  {deletingFiles.has(file.id) ? (
+                    <RefreshCw size={14} className="spinning" />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                  Delete
+                </button>
               </div>
-            </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Compact Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-content">
-              <div className="modal-header">
-                <AlertTriangle className="icon-sm warning-icon" />
-                <h3 className="modal-title">Delete File</h3>
-              </div>
+        <div className="private-modal">
+          <div className="private-modal-content">
+            <div className="private-modal-header">
+              <h3>Delete File</h3>
+              <button 
+                className="private-modal-close"
+                onClick={() => setShowDeleteConfirm(null)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="private-modal-body">
+              <p>Delete this file and all associated embeddings and chunks? This cannot be undone.</p>
               
-              <p className="modal-text">
-                Delete this file and all associated embeddings and chunks? This cannot be undone.
-              </p>
-              
-              <div className="modal-actions">
+              <div className="private-modal-actions">
                 <button
                   onClick={() => setShowDeleteConfirm(null)}
-                  className="cancel-btn"
+                  className="private-cancel-button"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleDeleteFile(showDeleteConfirm)}
                   disabled={deletingFiles.has(showDeleteConfirm)}
-                  className={`delete-confirm-btn ${deletingFiles.has(showDeleteConfirm) ? 'disabled' : ''}`}
+                  className="private-delete-confirm-button"
                 >
-                  {deletingFiles.has(showDeleteConfirm) ? 'Deleting...' : 'Delete'}
+                  {deletingFiles.has(showDeleteConfirm) ? (
+                    <>
+                      <RefreshCw size={14} className="spinning" />
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete File'
+                  )}
                 </button>
               </div>
             </div>

@@ -1,9 +1,10 @@
 //ConversationManager.jsx
 import React, { useState, useEffect } from 'react';
+import { MessageCircle, RefreshCw, X, Trash2, Plus, Folder } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import '../styling/conversationmanager.css';
 
-export default function ConversationManager({ onClose }) {
+export default function ConversationManager() {
   const { state, api } = useApp();
   const [newConversationName, setNewConversationName] = useState('');
   const [localConversations, setLocalConversations] = useState([]);
@@ -145,7 +146,7 @@ export default function ConversationManager({ onClose }) {
   };
 
   const getConversationIcon = (type) => {
-    return type === 'default' ? '🗂️' : '🗂️';
+    return type === 'default' ? <Folder className="conversation-type-icon" /> : <MessageCircle className="conversation-type-icon" />;
   };
 
   /* ADDED: Check if authenticated
@@ -163,151 +164,153 @@ export default function ConversationManager({ onClose }) {
   */
 
   return (
-    <div className="conversation-manager">
-      {/* Native-style Header */}
-      <div className="header">
-        <div className="header-row">
-          <h1 className="title">Conversation Manager</h1>
-          <button
-            onClick={() => api.fetchConversations()}
-            disabled={loading}
-            className={`refresh-btn ${loading ? 'disabled' : ''}`}
-          >
-            <span className={`refresh-icon ${loading ? 'spinning' : ''}`}>🔄</span>
-            Refresh
-          </button>
-        </div>
-        
-        <div className="add-conversation-row">
-          <input
-            type="text"
-            value={newConversationName}
-            onChange={(e) => setNewConversationName(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Enter conversation name..."
-            disabled={loading}
-            className="conversation-input"
-          />
-          <button 
-            onClick={handleAdd}
-            disabled={loading || !newConversationName.trim()}
-            className={`add-btn ${(loading || !newConversationName.trim()) ? 'disabled' : ''}`}
-          >
-            + Add
-          </button>
-        </div>
+    <div className="private-conversation-manager">
+      {/* Header */}
+      <div className="private-header">
+        <h1 className="private-title">Private.ly Conversations</h1>
+        <p className="private-subtitle">Organize and manage your conversation topics</p>
       </div>
 
-      {/* Content */}
-      <div className="content">
+      {/* Controls */}
+      <div className="private-content">
+        <div className="private-section-header">
+          <h2 className="private-section-title">Conversations</h2>
+          <div className="private-conversation-controls">
+            <div className="private-add-conversation">
+              <input
+                type="text"
+                value={newConversationName}
+                onChange={(e) => setNewConversationName(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Enter conversation name..."
+                disabled={loading}
+                className="private-conversation-input"
+              />
+              <button 
+                onClick={handleAdd}
+                disabled={loading || !newConversationName.trim()}
+                className="private-add-button"
+              >
+                <Plus size={16} />
+                Add
+              </button>
+            </div>
+            <button
+              onClick={() => api.fetchConversations()}
+              disabled={loading}
+              className="private-refresh-button"
+            >
+              <RefreshCw size={16} className={loading ? 'spinning' : ''} />
+            </button>
+          </div>
+        </div>
+
+        {/* Error Banner */}
         {error && (
-          <div className={`error-alert ${error.includes('successfully') ? 'success-alert' : ''}`}>
-            <span className="error-icon">⚠️</span>
-            <span className="error-text">{error}</span>
-            <button onClick={() => {/* dispatch clear error if needed */}} className="error-close">
-              ✕
+          <div className="private-error-banner">
+            <span>{error}</span>
+            <button onClick={() => {/* dispatch clear error if needed */}} className="private-error-close">
+              <X size={16} />
             </button>
           </div>
         )}
 
         {loading && localConversations.length === 0 ? (
-          <div className="loading-state">
-            <span className="loading-icon spinning">🔄</span>
-            <p>Loading...</p>
+          <div className="private-loading">
+            <RefreshCw className="spinning" size={24} />
+            <p>Loading conversations...</p>
+          </div>
+        ) : localConversations.length === 0 ? (
+          <div className="private-empty-state">
+            <MessageCircle size={48} className="private-empty-icon" />
+            <p>No conversations found</p>
+            <p>Create your first conversation to get started</p>
           </div>
         ) : (
-          <div className="conversations-container">
-            <div className="conversations-content">
-              <div className="conversations-count">{localConversations.length} conversations</div>
-              
-              {localConversations.length === 0 ? (
-                <div className="empty-state">
-                  <p>No conversations found</p>
+          <div className="private-conversations-grid">
+            {localConversations.map((conversation, i) => (
+              <div key={i} className="private-conversation-card">
+                <div className="private-conversation-header">
+                  {getConversationIcon(conversation.value)}
+                  <div className="private-conversation-badge">
+                    {conversation.value === 'default' ? (
+                      <span className="private-default-badge">Default</span>
+                    ) : (
+                      <span className="private-custom-badge">Custom</span>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="conversations-list">
-                  {localConversations.map((conversation, i) => (
-                    <div key={i} className="conversation-card">
-                      <div className="conversation-content">
-                        <div className="conversation-header">
-                          <div className="conversation-info">
-                            <span className="conversation-icon">
-                              {getConversationIcon(conversation.value)}
-                            </span>
-                            <div className="conversation-details">
-                              <div className="conversation-name" title={conversation.label}>
-                                {conversation.label}
-                              </div>
-                              {conversation.value === 'default' && (
-                                <div className="conversation-type">DEFAULT</div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <button
-                            onClick={() => setShowDeleteConfirm(conversation.value)}
-                            disabled={deletingConversations.has(conversation.value)}
-                            className={`delete-btn ${deletingConversations.has(conversation.value) ? 'disabled' : ''}`}
-                            title={conversation.value === 'default' ? 'Clear default conversation files' : 'Delete conversation and all files'}
-                          >
-                            {deletingConversations.has(conversation.value) ? (
-                              <span className="spinning">🔄</span>
-                            ) : (
-                              conversation.value === 'default' ? '🗑️' : '❌'
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="private-conversation-name" title={conversation.label}>
+                  {conversation.label}
                 </div>
-              )}
+                <button
+                  className="private-delete-button"
+                  onClick={() => setShowDeleteConfirm(conversation.value)}
+                  disabled={deletingConversations.has(conversation.value)}
+                  title={conversation.value === 'default' ? 'Clear default conversation files' : 'Delete conversation and all files'}
+                >
+                  {deletingConversations.has(conversation.value) ? (
+                    <RefreshCw size={14} className="spinning" />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                  {conversation.value === 'default' ? 'Clear' : 'Delete'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="private-modal">
+            <div className="private-modal-content">
+              <div className="private-modal-header">
+                <h3>
+                  {showDeleteConfirm === 'default' ? 'Clear Conversation' : 'Delete Conversation'}
+                </h3>
+                <button 
+                  className="private-modal-close"
+                  onClick={() => setShowDeleteConfirm(null)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="private-modal-body">
+                <p>
+                  {showDeleteConfirm === 'default' 
+                    ? 'Clear all files from the default conversation? This cannot be undone.'
+                    : 'Delete this conversation and all associated files? This cannot be undone.'
+                  }
+                </p>
+                
+                <div className="private-modal-actions">
+                  <button
+                    onClick={() => setShowDeleteConfirm(null)}
+                    className="private-cancel-button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleDelete(showDeleteConfirm)}
+                    disabled={deletingConversations.has(showDeleteConfirm)}
+                    className="private-delete-confirm-button"
+                  >
+                    {deletingConversations.has(showDeleteConfirm) ? (
+                      <>
+                        <RefreshCw size={14} className="spinning" />
+                        {showDeleteConfirm === 'default' ? 'Clearing...' : 'Deleting...'}
+                      </>
+                    ) : (
+                      showDeleteConfirm === 'default' ? 'Clear Files' : 'Delete Conversation'
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* Simple Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-content">
-              <div className="modal-header">
-                <span className="warning-icon">⚠️</span>
-                <h3 className="modal-title">
-                  {showDeleteConfirm === 'default' ? 'Clear Conversation' : 'Delete Conversation'}
-                </h3>
-              </div>
-              
-              <p className="modal-text">
-                {showDeleteConfirm === 'default' 
-                  ? 'Clear all files from the default conversation? This cannot be undone.'
-                  : 'Delete this conversation and all associated files? This cannot be undone.'
-                }
-              </p>
-              
-              <div className="modal-actions">
-                <button
-                  onClick={() => setShowDeleteConfirm(null)}
-                  className="cancel-btn"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleDelete(showDeleteConfirm)}
-                  disabled={deletingConversations.has(showDeleteConfirm)}
-                  className={`delete-confirm-btn ${deletingConversations.has(showDeleteConfirm) ? 'disabled' : ''}`}
-                >
-                  {deletingConversations.has(showDeleteConfirm) 
-                    ? (showDeleteConfirm === 'default' ? 'Clearing...' : 'Deleting...') 
-                    : (showDeleteConfirm === 'default' ? 'Clear' : 'Delete')
-                  }
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
