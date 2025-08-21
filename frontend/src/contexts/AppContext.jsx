@@ -8,6 +8,7 @@ const initialState = {
   // Auth state
   isAuthenticated: false,
   authToken: null,
+  refreshToken: null,
   userData: null,
   
   // App state
@@ -26,6 +27,7 @@ function appReducer(state, action) {
         ...state, 
         isAuthenticated: true,
         authToken: action.payload.token,
+        refreshToken: action.payload.refreshToken,
         userData: action.payload.userData 
       };
     case 'CLEAR_AUTH':
@@ -33,6 +35,7 @@ function appReducer(state, action) {
         ...state, 
         isAuthenticated: false,
         authToken: null,
+        refreshToken: null,
         userData: null 
       };
     
@@ -72,6 +75,7 @@ export function AppProvider({ children }) {
   useEffect(() => {
     const checkStoredAuth = async () => {
       const storedToken = localStorage.getItem('authToken');
+      const storedRefreshToken = localStorage.getItem('refreshToken');
       const storedUser = localStorage.getItem('userData');
       
       if (storedToken && storedUser) {
@@ -89,6 +93,7 @@ export function AppProvider({ children }) {
               type: 'SET_AUTH', 
               payload: { 
                 token: storedToken, 
+                refreshToken: storedRefreshToken,
                 userData: profile 
               } 
             });
@@ -98,14 +103,50 @@ export function AppProvider({ children }) {
               console.log('Sending auth-success signal for stored token');
               window.electronAPI.send('auth-success');
             }
+          } else if (response.status === 401 && storedRefreshToken) {
+            // Token expired, try to refresh
+            console.log('Access token expired, attempting refresh...');
+            const refreshResult = await refreshAuthToken(storedRefreshToken);
+            if (refreshResult.success) {
+              // Refresh successful, retry getting profile
+              const retryResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/auth/me`, {
+                headers: {
+                  'Authorization': `Bearer ${refreshResult.accessToken}`
+                }
+              });
+              
+              if (retryResponse.ok) {
+                const profile = await retryResponse.json();
+                dispatch({ 
+                  type: 'SET_AUTH', 
+                  payload: { 
+                    token: refreshResult.accessToken, 
+                    refreshToken: refreshResult.refreshToken,
+                    userData: profile 
+                  } 
+                });
+                
+                if (window.electronAPI?.send) {
+                  console.log('Sending auth-success signal after refresh');
+                  window.electronAPI.send('auth-success');
+                }
+              }
+            } else {
+              // Refresh failed, clear storage
+              localStorage.removeItem('authToken');
+              localStorage.removeItem('refreshToken');
+              localStorage.removeItem('userData');
+            }
           } else {
-            // Token expired, clear storage
+            // Token expired and no refresh token, clear storage
             localStorage.removeItem('authToken');
+            localStorage.removeItem('refreshToken');
             localStorage.removeItem('userData');
           }
         } catch (error) {
           console.error('Token validation failed:', error);
           localStorage.removeItem('authToken');
+          localStorage.removeItem('refreshToken');
           localStorage.removeItem('userData');
         }
       }
@@ -114,6 +155,78 @@ export function AppProvider({ children }) {
     checkStoredAuth();
   }, []);
 
+  // Periodic token refresh - check every 5 minutes and refresh if token expires in next 10 minutes
+  useEffect(() => {
+    if (!state.authToken || !state.refreshToken) return;
+
+    const checkTokenExpiry = async () => {
+      try {
+        // Decode JWT to check expiration (simple implementation)
+        const payload = JSON.parse(atob(state.authToken.split('.')[1]));
+        const currentTime = Math.floor(Date.now() / 1000);
+        const timeUntilExpiry = payload.exp - currentTime;
+
+        // If token expires in less than 10 minutes (600 seconds), refresh it
+        if (timeUntilExpiry < 600) {
+          console.log('Token will expire soon, refreshing...');
+          const refreshResult = await refreshAuthToken(state.refreshToken);
+          if (!refreshResult.success) {
+            console.log('Background token refresh failed, user will need to login again');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking token expiry:', error);
+      }
+    };
+
+    // Check immediately and then every 5 minutes
+    checkTokenExpiry();
+    const interval = setInterval(checkTokenExpiry, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [state.authToken, state.refreshToken]);
+
+  // Helper function to refresh auth token
+  const refreshAuthToken = async (refreshToken) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Update stored tokens
+        localStorage.setItem('authToken', data.access_token);
+        localStorage.setItem('refreshToken', data.refresh_token);
+        
+        // Update state
+        dispatch({ 
+          type: 'SET_AUTH', 
+          payload: { 
+            token: data.access_token, 
+            refreshToken: data.refresh_token,
+            userData: state.userData 
+          } 
+        });
+        
+        return {
+          success: true,
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token
+        };
+      } else {
+        console.error('Token refresh failed:', response.status);
+        return { success: false };
+      }
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      return { success: false };
+    }
+  };
+
   // Helper function to get auth headers
   const getAuthHeaders = () => {
     if (!state.authToken) return { 'Content-Type': 'application/json' };
@@ -121,6 +234,44 @@ export function AppProvider({ children }) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${state.authToken}`
     };
+  };
+
+  // Helper function to make authenticated API calls with automatic retry on 401
+  const makeAuthenticatedRequest = async (url, options = {}) => {
+    // First attempt with current token
+    let response = await fetch(url, {
+      ...options,
+      headers: {
+        ...getAuthHeaders(),
+        ...options.headers
+      }
+    });
+
+    // If 401 and we have a refresh token, try to refresh and retry
+    if (response.status === 401 && state.refreshToken) {
+      console.log('Received 401, attempting token refresh...');
+      const refreshResult = await refreshAuthToken(state.refreshToken);
+      
+      if (refreshResult.success) {
+        console.log('Token refreshed successfully, retrying request...');
+        // Retry the request with the new token
+        response = await fetch(url, {
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${refreshResult.accessToken}`,
+            ...options.headers
+          }
+        });
+      } else {
+        // Refresh failed, logout user
+        console.log('Token refresh failed, logging out...');
+        api.logout();
+        throw new Error('Session expired. Please login again.');
+      }
+    }
+
+    return response;
   };
 
   // Shared API functions that all windows can use
@@ -153,12 +304,14 @@ export function AppProvider({ children }) {
           
           // Store auth data
           localStorage.setItem('authToken', data.access_token);
+          localStorage.setItem('refreshToken', data.refresh_token);
           localStorage.setItem('userData', JSON.stringify(profile));
           
           dispatch({ 
             type: 'SET_AUTH', 
             payload: { 
               token: data.access_token, 
+              refreshToken: data.refresh_token,
               userData: profile 
             } 
           });
@@ -186,6 +339,7 @@ export function AppProvider({ children }) {
       
       // Clear storage
       localStorage.removeItem('authToken');
+      localStorage.removeItem('refreshToken');
       localStorage.removeItem('userData');
       
       // Reset to auth window size if in Electron
@@ -203,9 +357,7 @@ export function AppProvider({ children }) {
 
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/conversations`, {
-          headers: getAuthHeaders()
-        });
+        const response = await makeAuthenticatedRequest(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/conversations`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch conversations: ${response.status}`);
@@ -227,9 +379,8 @@ export function AppProvider({ children }) {
       }
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/conversations`, {
+        const response = await makeAuthenticatedRequest(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/conversations`, {
           method: 'POST',
-          headers: getAuthHeaders(),
           body: JSON.stringify({ name })
         });
         
@@ -253,9 +404,8 @@ export function AppProvider({ children }) {
       }
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/conversations/${encodeURIComponent(conversationValue)}`, {
-          method: 'DELETE',
-          headers: getAuthHeaders()
+        const response = await makeAuthenticatedRequest(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/conversations/${encodeURIComponent(conversationValue)}`, {
+          method: 'DELETE'
         });
         
         if (response.ok) {
@@ -279,9 +429,7 @@ export function AppProvider({ children }) {
       }
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/files?conversation=${encodeURIComponent(conversation)}`, {
-          headers: getAuthHeaders()
-        });
+        const response = await makeAuthenticatedRequest(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/files?conversation=${encodeURIComponent(conversation)}`);
         
         if (response.ok) {
           const data = await response.json();
@@ -303,9 +451,8 @@ export function AppProvider({ children }) {
       }
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/files/${encodeURIComponent(fileId)}`, {
-          method: 'DELETE',
-          headers: getAuthHeaders()
+        const response = await makeAuthenticatedRequest(`${import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com'}/api/files/${encodeURIComponent(fileId)}`, {
+          method: 'DELETE'
         });
         
         if (response.ok) {
