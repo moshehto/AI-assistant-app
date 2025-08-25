@@ -252,3 +252,44 @@
 .chatbot-container.light .chatbot-send:hover {
   background-color: rgba(0, 0, 0, 0.2);
 }
+
+/* Add these styles to your existing chatbot.css file */
+
+/* RTL support for Arabic text - only affects text inside bubbles */
+.message-bubble.rtl-text {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Ensure markdown content respects RTL direction */
+.message-bubble.rtl-text p,
+.message-bubble.rtl-text div,
+.message-bubble.rtl-text span {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Handle lists in RTL */
+.message-bubble.rtl-text ul,
+.message-bubble.rtl-text ol {
+  direction: rtl;
+  text-align: right;
+  padding-right: 1.5em;
+  padding-left: 0;
+}
+
+.message-bubble.rtl-text li {
+  text-align: right;
+}
+
+/* Handle code blocks in RTL - keep them LTR for better readability */
+.message-bubble.rtl-text pre,
+.message-bubble.rtl-text code {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Handle mixed content - if there's both Arabic and English */
+.message-bubble.rtl-text {
+  unicode-bidi: embed;
+}

@@ -17,6 +17,15 @@ export default function Chatbot({ conversationId }) {
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com';
 
+  // Helper function to detect if text contains Arabic characters
+  const hasArabicText = (text) => {
+    // Arabic Unicode range: U+0600 to U+06FF (Arabic block)
+    // Extended Arabic: U+0750 to U+077F (Arabic Supplement)
+    // Arabic Presentation Forms: U+FB50 to U+FDFF and U+FE70 to U+FEFF
+    const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+    return arabicRegex.test(text);
+  };
+
   // Helper function to get auth headers
   const getAuthHeaders = () => {
     if (!state.authToken) {
@@ -269,13 +278,16 @@ export default function Chatbot({ conversationId }) {
 
       {/* Messages */}
       <div className="chatbot-messages">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`message-row ${msg.role}`}>
-            <div className="message-bubble">
-              <ReactMarkdown>{msg.content}</ReactMarkdown>
+        {messages.map((msg) => {
+          const isArabic = hasArabicText(msg.content);
+          return (
+            <div key={msg.id} className={`message-row ${msg.role}`}>
+              <div className={`message-bubble ${isArabic ? 'rtl-text' : ''}`}>
+                <ReactMarkdown>{msg.content}</ReactMarkdown>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {loading && (
           <div className="message-row assistant">
