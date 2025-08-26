@@ -13,6 +13,11 @@ export default function ConversationManager() {
 
   // Use shared state and API - GET AUTH TOKEN
   const { conversations, loading, error, authToken, currentConversation } = state; // ADDED: Get authToken and currentConversation
+  
+  // Debug log to see when currentConversation changes
+  useEffect(() => {
+    console.log('🔄 ConversationManager: currentConversation changed to:', currentConversation);
+  }, [currentConversation]);
 
   // ADDED: Helper function to get auth headers
   const getAuthHeaders = () => {
@@ -25,10 +30,19 @@ export default function ConversationManager() {
     };
   };
 
-  // Fetch conversations on mount using shared API
+  // Fetch conversations and current conversation on mount using shared API
   useEffect(() => {
     if (authToken) { // ADDED: Only fetch if authenticated
       api.fetchConversations();
+      
+      // Get current conversation from Electron main process
+      if (window.electronAPI?.getCurrentConversation) {
+        window.electronAPI.getCurrentConversation().then((currentConv) => {
+          if (currentConv) {
+            api.setCurrentConversation(currentConv);
+          }
+        });
+      }
     }
   }, [authToken]); // ADDED: authToken as dependency
 
@@ -146,6 +160,11 @@ export default function ConversationManager() {
   };
 
   const handleSelectConversation = (conversationValue) => {
+    console.log('🔍 Selecting conversation:', conversationValue);
+    
+    // Update the current conversation in AppContext
+    api.setCurrentConversation(conversationValue);
+    
     // Send message to Electron main process to update conversation in floating bar
     if (window.electronAPI?.setCurrentConversation) {
       window.electronAPI.setCurrentConversation(conversationValue);

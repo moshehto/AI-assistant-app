@@ -7,6 +7,7 @@ let chatbotWindow;
 let conversationManagerWindow;
 let fileManagerWindow;
 let conversationList = ['default'];
+let currentConversation = 'default'; // Track the current conversation
 let adminDashboardWindow;
 
 
@@ -187,6 +188,10 @@ ipcMain.handle('get-conversation-list', () => {
   return conversationList;
 });
 
+ipcMain.handle('get-current-conversation', () => {
+  return currentConversation;
+});
+
 ipcMain.on('open-chatbot-window', (event, conversation) => {
   createOrToggleChatbotWindow(conversation || 'default');
 });
@@ -198,6 +203,10 @@ ipcMain.on('admin-dashboard-window', createAdminDashboardWindow);
 
 
 ipcMain.on('set-current-conversation', (event, conversationValue) => {
+  // Store the current conversation
+  currentConversation = conversationValue;
+  console.log('🔄 Main process: Current conversation set to:', currentConversation);
+  
   // Send message to main window to update current conversation
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('conversation-changed', conversationValue);

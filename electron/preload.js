@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeDeleteconversationListener: (callback) => ipcRenderer.removeListener('delete-conversation', callback),
 
   getconversationList: () => ipcRenderer.invoke('get-conversation-list'),
+  getCurrentConversation: () => ipcRenderer.invoke('get-current-conversation'),
 
   openAdminDashboardWindow: () => ipcRenderer.send('admin-dashboard-window'),
 

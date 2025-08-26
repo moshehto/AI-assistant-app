@@ -9,7 +9,6 @@ export default function FloatingBar() {
     { label: '🗂️ Default conversation', value: 'default' },
     { label: '⚙️ Manage conversations', value: 'manage_conversations' }
   ]);
-  const [selectedConversation, setSelectedConversation] = useState('default');
 
   // Load conversations when component mounts or auth changes
   useEffect(() => {
@@ -33,7 +32,7 @@ export default function FloatingBar() {
   // Listen for conversation changes from other windows
   useEffect(() => {
     const handleConversationChange = (conversationValue) => {
-      setSelectedConversation(conversationValue);
+      api.setCurrentConversation(conversationValue);
     };
 
     if (window.electronAPI?.onConversationChanged) {
@@ -45,7 +44,7 @@ export default function FloatingBar() {
         window.electronAPI.removeConversationChangedListener(handleConversationChange);
       }
     };
-  }, []);
+  }, [api]);
 
   const loadConversations = async () => {
     await api.fetchConversations();
@@ -81,7 +80,7 @@ export default function FloatingBar() {
   };
 
   const getCurrentConversationName = () => {
-    const current = conversations.find(conv => conv.value === selectedConversation);
+    const current = conversations.find(conv => conv.value === state.currentConversation);
     if (current) {
       return current.label.replace(/^[\u{1F5C2}\u{1F195}]\s*/u, '').replace('Default conversation', 'Default');
     }
@@ -109,7 +108,7 @@ export default function FloatingBar() {
         title="Click to manage conversations"
       >
         <span className="conversation-icon">
-          {conversations.find(conv => conv.value === selectedConversation)?.label.includes('Default') ? '🗂️' : '🆕'}
+          {conversations.find(conv => conv.value === state.currentConversation)?.label.includes('Default') ? '🗂️' : '🆕'}
         </span>
         <span className="conversation-name">
           {getCurrentConversationName()}
@@ -130,11 +129,11 @@ export default function FloatingBar() {
             👥
           </button>
         )}
-      <button className="bar-btn" title="List Files" onClick={() => window.electronAPI?.openFileManagerWindow?.(selectedConversation)}>📁</button>
+      <button className="bar-btn" title="List Files" onClick={() => window.electronAPI?.openFileManagerWindow?.(state.currentConversation)}>📁</button>
       
 
       
-      <button className="bar-btn" title="Chatbot" onClick={() => window.electronAPI?.openChatbotWindow?.(selectedConversation)}>🧠</button>
+      <button className="bar-btn" title="Chatbot" onClick={() => window.electronAPI?.openChatbotWindow?.(state.currentConversation)}>🧠</button>
       
       <div className="drag-fill" />
       

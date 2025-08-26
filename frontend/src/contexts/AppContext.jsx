@@ -421,6 +421,11 @@ export function AppProvider({ children }) {
       }
     },
 
+    // Utility functions
+    setCurrentConversation(conversationValue) {
+      dispatch({ type: 'SET_CURRENT_CONVERSATION', payload: conversationValue });
+    },
+
     // File functions
     async fetchFiles(conversation) {
       if (!state.authToken) {
