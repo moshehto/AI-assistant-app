@@ -11,28 +11,26 @@
     font-family: 'Segoe UI', sans-serif;
     border-radius: 12px;
     overflow: hidden;
-    /* ❌ Removed app-region: drag — do not apply here */
-  }
-  
-  .chatbot-header {
-    -webkit-app-region: drag; /* ✅ Makes just the header draggable */
+}
+
+.chatbot-header {
+    -webkit-app-region: drag;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
     background: rgba(0, 0, 0, 0.3);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .chatbot-title {
+}
+
+.chatbot-title {
     color: white;
     font-size: 1rem;
     font-weight: 500;
-    /* ❌ REMOVE: no need for drag here, it's already inherited from parent */
-  }
-  
-  .chatbot-close {
-    -webkit-app-region: no-drag; /* ✅ Prevent drag interference */
+}
+
+.chatbot-close {
+    -webkit-app-region: no-drag;
     background: transparent;
     border: none;
     color: white;
@@ -40,35 +38,36 @@
     cursor: pointer;
     padding: 4px 10px;
     border-radius: 8px;
-  }
-  
-  .chatbot-close:hover {
+}
+
+.chatbot-close:hover {
     background-color: rgba(255, 255, 255, 0.2);
-  }
-  
-  .chatbot-messages {
+}
+
+.chatbot-messages {
     flex: 1;
     padding: 15px;
     overflow-y: auto;
     scroll-behavior: smooth;
-    -webkit-app-region: no-drag; /* ✅ Ensure interaction is allowed */
-  }
-  
-  .message-row {
+    -webkit-app-region: no-drag;
+}
+
+.message-row {
     display: flex;
     margin-bottom: 10px;
     width: 100%;
-  }
-  
-  .message-row.user {
+}
+
+.message-row.user {
     justify-content: flex-end;
-  }
-  
-  .message-row.bot {
+}
+
+.message-row.assistant,
+.message-row.bot {
     justify-content: flex-start;
-  }
-  
-  .message-bubble {
+}
+
+.message-bubble {
     max-width: 80%;
     padding: 10px 15px;
     border-radius: 18px;
@@ -80,82 +79,222 @@
     color: white;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-  }
-  
-  .message-row.user .message-bubble {
+}
+
+.message-row.user .message-bubble {
     background-color: rgba(255, 255, 255, 0.2);
     color: white;
     border-bottom-right-radius: 2px;
-  }
-  
-  .message-row.bot .message-bubble {
+}
+
+.message-row.assistant .message-bubble,
+.message-row.bot .message-bubble {
     background-color: rgba(255, 255, 255, 0.08);
     color: white;
     border-bottom-left-radius: 2px;
-  }
-  
-  .typing {
+}
+
+.typing {
     font-style: italic;
     opacity: 0.7;
-  }
-  
-  .chatbot-input-area {
-    display: flex;
+}
+
+/* Modern Input Area - matches chat interface style */
+.chatbot-input-container {
+    padding: 16px 20px 20px 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 10px;
     background: rgba(30, 30, 30, 0.5);
     backdrop-filter: blur(10px);
-    -webkit-app-region: no-drag; /* ✅ This whole section must allow interaction */
-  }
-  
-  .chatbot-input {
-    flex: 1;
-    padding: 10px 15px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background-color: transparent;
-    color: white;
-    border-radius: 20px 0 0 20px;
-    font-size: 0.95rem;
-    outline: none;
-    -webkit-app-region: no-drag; /* ✅ User must be able to type */
-  }
-  
-  .chatbot-send {
-    padding: 10px 20px;
-    border: none;
-    background-color: rgba(255, 255, 255, 0.2);
-    color: white;
-    border-radius: 0 20px 20px 0;
-    cursor: pointer;
-    -webkit-app-region: no-drag; /* ✅ Allow clicking */
-  }
-  
-  .chatbot-send:hover {
-    background-color: rgba(255, 255, 255, 0.4);
-  }
+    -webkit-app-region: no-drag;
+}
 
-  /* NEW: Light theme overrides */
+.chatbot-input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    padding: 8px 12px 8px 8px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: all 0.2s ease;
+}
+
+.chatbot-input-wrapper:focus-within {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+/* Circular attachment button */
+.chatbot-attachment-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    -webkit-app-region: no-drag;
+}
+
+.chatbot-attachment-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: scale(1.1);
+}
+
+.chatbot-file-input {
+    display: none;
+}
+
+.chatbot-textarea-container {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+
+.chatbot-textarea {
+    width: 100%;
+    min-height: 20px;
+    max-height: 120px;
+    padding: 6px 8px;
+    border: none;
+    background: transparent;
+    color: white;
+    font-size: 14px;
+    font-family: 'Segoe UI', sans-serif;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    overflow-y: hidden;
+    -webkit-app-region: no-drag;
+    transition: height 0.1s ease;
+}
+
+.chatbot-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Circular send button */
+.chatbot-send-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    -webkit-app-region: no-drag;
+}
+
+.chatbot-send-btn.enabled:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.chatbot-send-btn.disabled {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Hide old input styles */
+.chatbot-input-area {
+    display: none;
+}
+
+.chatbot-upload-btn {
+    display: none;
+}
+
+.chatbot-send-btn:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+.chatbot-send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.chatbot-send-btn:disabled:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Hide old input area */
+.chatbot-input-area {
+    display: none;
+}
+
+/* Light theme overrides */
 .chatbot-container.light {
     background: rgba(255, 255, 255, 0.7);
     color: #222;
-  }
-  
-  .chatbot-container.light .chatbot-input-area {
+}
+
+.chatbot-container.light .chatbot-input-container {
     background: rgba(255, 255, 255, 0.9);
-  }
-  
-  .chatbot-container.light .message-bubble {
+}
+
+.chatbot-container.light .chatbot-input-wrapper {
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.chatbot-container.light .chatbot-input-wrapper:focus-within {
+    border-color: rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+}
+
+.chatbot-container.light .chatbot-attachment-btn {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.chatbot-container.light .chatbot-attachment-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.8);
+}
+
+.chatbot-container.light .chatbot-textarea {
+    color: #222;
+}
+
+.chatbot-container.light .chatbot-textarea::placeholder {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.chatbot-container.light .chatbot-send-btn {
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.8);
+}
+
+.chatbot-container.light .chatbot-send-btn.enabled:hover {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.chatbot-container.light .chatbot-send-btn.disabled {
+    background: rgba(0, 0, 0, 0.02);
+    color: rgba(0, 0, 0, 0.3);
+}
+
+.chatbot-container.light .message-bubble {
     background: rgba(240, 240, 240, 0.9);
     color: #222;
-  }
-  
-  .chatbot-container.light .chatbot-input {
-    color: #222;
-    border: 1px solid #ccc;
-  }
-  
-  /* Shared styles */
-  .chatbot-toggle-mode {
+}
+
+/* Shared styles */
+.chatbot-toggle-mode {
     -webkit-app-region: no-drag;
     background: transparent;
     border: none;
@@ -163,16 +302,15 @@
     font-size: 1.1rem;
     cursor: pointer;
     margin-right: 8px;
-  }
-  
-  .chatbot-header-buttons {
+}
+
+.chatbot-header-buttons {
     display: flex;
     align-items: center;
     gap: 4px;
-  }
-  
+}
 
-  .chatbot-minimize {
+.chatbot-minimize {
     -webkit-app-region: no-drag;
     background: transparent;
     border: none;
@@ -181,115 +319,60 @@
     cursor: pointer;
     padding: 4px 10px;
     border-radius: 6px;
-  }
-  
-  .chatbot-minimize:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-  }
-  
-  .chatbot-container.light .chatbot-minimize {
-    color: #222;
-  }
-  
-  .chatbot-container.light .chatbot-minimize:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-  }
+}
 
-  .chatbot-container::after {
+.chatbot-minimize:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.chatbot-container.light .chatbot-minimize {
+    color: #222;
+}
+
+.chatbot-container.light .chatbot-minimize:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.chatbot-container::after {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    border: 8px solid transparent; /* clickable area */
+    border: 8px solid transparent;
     box-sizing: border-box;
-    pointer-events: none; /* so it doesn’t block content */
-  }
-  
-  .chatbot-file-input {
-    color: white;
-    font-size: 0.9rem;
-    margin-right: 10px;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    max-width: 150px;
-    overflow: hidden;
-    white-space: nowrap;
-  }
-  
-  .chatbot-container.light .chatbot-file-input {
-    color: #222;
-  }
-
-  .chatbot-upload-icon {
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 6px 12px;
-    border-radius: 8px;
-    background-color: transparent;
-    -webkit-app-region: no-drag;
-  }
-
-
-  
-  .chatbot-upload-icon:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-  }
-  
-  .chatbot-container.light .chatbot-upload-icon:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-  }
-  
-  .chatbot-file-hidden {
-    display: none;
-  }
-  
-  
-  .chatbot-container.light .chatbot-send {
-  background-color: rgba(0, 0, 0, 0.1);
-  color: #222;
+    pointer-events: none;
 }
 
-.chatbot-container.light .chatbot-send:hover {
-  background-color: rgba(0, 0, 0, 0.2);
-}
-
-/* Add these styles to your existing chatbot.css file */
-
-/* RTL support for Arabic text - only affects text inside bubbles */
+/* RTL support for Arabic text */
 .message-bubble.rtl-text {
-  direction: rtl;
-  text-align: right;
+    direction: rtl;
+    text-align: right;
 }
 
-/* Ensure markdown content respects RTL direction */
 .message-bubble.rtl-text p,
 .message-bubble.rtl-text div,
 .message-bubble.rtl-text span {
-  direction: rtl;
-  text-align: right;
+    direction: rtl;
+    text-align: right;
 }
 
-/* Handle lists in RTL */
 .message-bubble.rtl-text ul,
 .message-bubble.rtl-text ol {
-  direction: rtl;
-  text-align: right;
-  padding-right: 1.5em;
-  padding-left: 0;
+    direction: rtl;
+    text-align: right;
+    padding-right: 1.5em;
+    padding-left: 0;
 }
 
 .message-bubble.rtl-text li {
-  text-align: right;
+    text-align: right;
 }
 
-/* Handle code blocks in RTL - keep them LTR for better readability */
 .message-bubble.rtl-text pre,
 .message-bubble.rtl-text code {
-  direction: ltr;
-  text-align: left;
+    direction: ltr;
+    text-align: left;
 }
 
-/* Handle mixed content - if there's both Arabic and English */
 .message-bubble.rtl-text {
-  unicode-bidi: embed;
+    unicode-bidi: embed;
 }
