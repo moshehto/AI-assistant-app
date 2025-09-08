@@ -10,11 +10,16 @@ export default function Chatbot({ conversationId }) {
   const [loading, setLoading] = useState(false);
   const [currentconversation, setCurrentconversation] = useState('default');
   const [darkMode, setDarkMode] = useState(true);
+  const [showConversationMenu, setShowConversationMenu] = useState(false);
+  const [showNewConversationInput, setShowNewConversationInput] = useState(false);
+  const [newConversationName, setNewConversationName] = useState('');
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const scrollRef = useRef(null);
   const textareaRef = useRef(null);
+  const menuRef = useRef(null);
 
   // Access shared state - IMPORTANT: Get auth token from context
-  const { state } = useApp();
+  const { state, api } = useApp();
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://chatbot-backend-fwl6.onrender.com';
 
@@ -121,10 +126,120 @@ export default function Chatbot({ conversationId }) {
     adjustTextareaHeight();
   }, [input]);
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowConversationMenu(false);
+      }
+    };
+
+    if (showConversationMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showConversationMenu]);
+
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
     sessionStorage.setItem('chatbot-dark-mode', newMode.toString());
+  };
+
+  // Load conversations for the dropdown menu
+  const loadConversations = async () => {
+    await api.fetchConversations();
+  };
+
+  // Switch to a different conversation
+  const switchConversation = async (conversationId) => {
+    setCurrentconversation(conversationId);
+    api.setCurrentConversation(conversationId);
+    
+    // Load chat history for the new conversation
+    if (state.authToken) {
+      loadChatHistory(conversationId);
+    }
+    
+    // Notify Electron about conversation change
+    if (window.electronAPI?.setCurrentConversation) {
+      window.electronAPI.setCurrentConversation(conversationId);
+    }
+    
+    setShowConversationMenu(false);
+  };
+
+  // Delete a conversation
+  const deleteConversation = async (conversationId) => {
+    if (conversationId === 'default') {
+      alert('Cannot delete the default conversation');
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete the conversation "${conversationId}"?`)) {
+      try {
+        // Use the API function from AppContext
+        await api.deleteConversation(conversationId);
+        
+        // Switch to default if we deleted the current conversation
+        if (conversationId === currentconversation) {
+          switchConversation('default');
+        }
+        
+        // Conversations list will be automatically updated by the AppContext
+      } catch (error) {
+        console.error('Error deleting conversation:', error);
+        alert('Error deleting conversation: ' + (error.message || 'Unknown error'));
+      }
+    }
+  };
+
+  // Create a new conversation
+  const createConversation = async () => {
+    if (!newConversationName.trim()) {
+      alert('Please enter a conversation name');
+      return;
+    }
+
+    setIsCreatingConversation(true);
+    try {
+      await api.addConversation(newConversationName.trim());
+      setNewConversationName('');
+      setShowNewConversationInput(false);
+      
+      // Switch to the new conversation
+      setTimeout(() => {
+        switchConversation(newConversationName.trim());
+      }, 500);
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      alert('Error creating conversation: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsCreatingConversation(false);
+    }
+  };
+
+  const handleNewConversationKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      createConversation();
+    } else if (e.key === 'Escape') {
+      setShowNewConversationInput(false);
+      setNewConversationName('');
+    }
+  };
+
+  const toggleConversationMenu = () => {
+    setShowConversationMenu(!showConversationMenu);
+    if (!showConversationMenu) {
+      loadConversations();
+    } else {
+      // Close new conversation input when menu closes
+      setShowNewConversationInput(false);
+      setNewConversationName('');
+    }
   };
 
   // ✅ Send message with auth headers
@@ -290,12 +405,101 @@ export default function Chatbot({ conversationId }) {
     <div className={`chatbot-container ${darkMode ? 'dark' : 'light'}`}>
       {/* Header */}
       <div className="chatbot-header">
-        <div className="chatbot-title">
-          Private.ly
-          <span className="conversation-indicator">
-            {currentconversation !== 'default' ? ` - ${currentconversation.replace(/_/g, ' ')}` : ''}
-          </span>
+        <div className="chatbot-header-left">
+          <div className="conversation-menu-container" ref={menuRef}>
+            <button 
+              className="hamburger-menu-btn" 
+              onClick={toggleConversationMenu}
+              title="Conversations"
+            >
+              💬
+            </button>
+            
+            {showConversationMenu && (
+              <div className="conversation-dropdown">
+                <div className="conversation-dropdown-header">
+                  <span>Conversations</span>
+                  <button 
+                    className="new-conversation-btn"
+                    onClick={() => setShowNewConversationInput(true)}
+                    title="New conversation"
+                  >
+                    ➕
+                  </button>
+                </div>
+                
+                {showNewConversationInput && (
+                  <div className="new-conversation-input-container">
+                    <input
+                      type="text"
+                      className="new-conversation-input"
+                      placeholder="Enter conversation name..."
+                      value={newConversationName}
+                      onChange={(e) => setNewConversationName(e.target.value)}
+                      onKeyDown={handleNewConversationKeyDown}
+                      autoFocus
+                      disabled={isCreatingConversation}
+                    />
+                    <div className="new-conversation-actions">
+                      <button 
+                        className="create-conversation-btn"
+                        onClick={createConversation}
+                        disabled={isCreatingConversation || !newConversationName.trim()}
+                      >
+                        {isCreatingConversation ? '⏳' : '✓'}
+                      </button>
+                      <button 
+                        className="cancel-conversation-btn"
+                        onClick={() => {
+                          setShowNewConversationInput(false);
+                          setNewConversationName('');
+                        }}
+                        disabled={isCreatingConversation}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="conversation-list">
+                  {state.conversations?.map((conversation) => (
+                    <div 
+                      key={conversation} 
+                      className={`conversation-item ${conversation === currentconversation ? 'active' : ''}`}
+                    >
+                      <button
+                        className="conversation-select-btn"
+                        onClick={() => switchConversation(conversation)}
+                      >
+                        <span className="conversation-label">
+                          {conversation === 'default' ? 'Default' : conversation.replace(/_/g, ' ')}
+                        </span>
+                      </button>
+                      {conversation !== 'default' && (
+                        <button
+                          className="conversation-delete-btn"
+                          onClick={() => deleteConversation(conversation)}
+                          title="Delete conversation"
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="chatbot-title">
+            Private.ly
+            <span className="conversation-indicator">
+              {currentconversation !== 'default' ? ` - ${currentconversation.replace(/_/g, ' ')}` : ''}
+            </span>
+          </div>
         </div>
+        
         <div className="chatbot-header-buttons">
           <button className="chatbot-toggle-mode" onClick={toggleDarkMode}>
             {darkMode ? '🌞' : '🌙'}

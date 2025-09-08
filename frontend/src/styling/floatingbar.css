@@ -72,4 +72,9 @@
     padding: 6px 10px;
     font-weight: bold;
   }
+
+  .drag-fill {
+    flex: 1;
+    -webkit-app-region: drag;
+  }
   
